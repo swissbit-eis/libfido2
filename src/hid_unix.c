@@ -70,12 +70,9 @@ fido_hid_unix_wait(int fd, int ms, const fido_sigset_t *sigmask)
 		r = ppoll(&pfd, 1, ms > -1 ? &ts : NULL, sigmask);
 	} while (r == -1 && errno == EINTR);
 
-	if (r < 0) {
-		fido_log_error(errno, "%s: ppoll", __func__);
-		return (-1);
-	}
-	if (r == 0) {
-		fido_log_error(ETIME, "%s: ppoll timed out", __func__);
+	if (r < 1) {
+		if (r == -1)
+			fido_log_error(errno, "%s: ppoll", __func__);
 		return (-1);
 	}
 
