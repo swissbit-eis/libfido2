@@ -78,21 +78,20 @@ fido_hid_unix_wait(int fd, int ms, const fido_sigset_t *sigmask)
 
 	do {
 		if (ms > -1) {
-			// Calculate the remaining timeout = ts_end - ts_now
+			// Calculate the remaining timeout
 			if (clock_gettime(CLOCK_MONOTONIC, &ts_now) == -1) {
 				fido_log_error(errno, "%s: clock_gettime", __func__);
 				return (-1);
 			}
-			if (ts_now.tv_nsec > ts_end.tv_nsec) {
-				ts_now.tv_sec += 1;
-				ts.tv_nsec = 1000000000L - ts_now.tv_nsec + ts_end.tv_nsec;
-			} else {
-				ts.tv_nsec = ts_end.tv_nsec - ts_now.tv_nsec;
+			ts.tv_sec = ts_end.tv_sec - ts_now.tv_sec;
+			ts.tv_nsec = ts_end.tv_nsec - ts_now.tv_nsec;
+			if (ts.tv_nsec < 0) {
+				ts.tv_sec -= 1;
+				ts.tv_nsec += 1000000000L;
 			}
-			if (ts_now.tv_sec > ts_end.tv_sec) {
+			if (ts.tv_sec < 0) {
 				return (-1); // Timeout expired
 			}
-			ts.tv_sec = ts_end.tv_sec - ts_now.tv_sec;
 		}
 		r = ppoll(&pfd, 1, ms > -1 ? &ts : NULL, sigmask);
 	} while (r == -1 && errno == EINTR);
