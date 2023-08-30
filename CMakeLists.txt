@@ -6,7 +6,6 @@
 # detect AppleClang; needs to come before project()
 cmake_policy(SET CMP0025 NEW)
 
-cmake_minimum_required(VERSION 3.0)
 project(libfido2 C)
 # Set PIE flags for POSITION_INDEPENDENT_CODE targets, added in CMake 3.14.
 if(POLICY CMP0083)
@@ -218,11 +217,9 @@ if(MSVC)
 	set(NFC_LINUX OFF)
 else()
 	include(FindPkgConfig)
-	if(NOT APPLE)
-		pkg_search_module(CBOR libcbor)
-		pkg_search_module(CRYPTO libcrypto)
-		pkg_search_module(ZLIB zlib)
-	endif()
+	pkg_search_module(CBOR libcbor)
+	pkg_search_module(CRYPTO libcrypto)
+	pkg_search_module(ZLIB zlib)
 
 	if(NOT CBOR_FOUND AND NOT HAVE_CBOR_H)
 		message(FATAL_ERROR "could not find libcbor")
