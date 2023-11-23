@@ -6,8 +6,8 @@
 # detect AppleClang; needs to come before project()
 cmake_policy(SET CMP0025 NEW)
 
-project(libfido2 C)
 cmake_minimum_required(VERSION 3.0)
+project(libfido2 C)
 # Set PIE flags for POSITION_INDEPENDENT_CODE targets, added in CMake 3.14.
 if(POLICY CMP0083)
 	cmake_policy(SET CMP0083 NEW)
