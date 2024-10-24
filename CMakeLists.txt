@@ -32,7 +32,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(FIDO_MAJOR "1")
 set(FIDO_MINOR "16")
-set(FIDO_PATCH "5")
+set(FIDO_PATCH "6")
 set(FIDO_SUFFIX "swissbit")
 set(FIDO_VERSION ${FIDO_MAJOR}.${FIDO_MINOR}.${FIDO_PATCH}-${FIDO_SUFFIX})
 
@@ -52,6 +52,7 @@ option(USE_PKGCONFIG     "Use pkgconfig to find dependencies when compiling for 
 add_definitions(-D_FIDO_MAJOR=${FIDO_MAJOR})
 add_definitions(-D_FIDO_MINOR=${FIDO_MINOR})
 add_definitions(-D_FIDO_PATCH=${FIDO_PATCH})
+add_definitions(-D_FIDO_SUFFIX=${FIDO_SUFFIX})
 
 if(BUILD_SHARED_LIBS)
 	set(_FIDO2_LIBRARY fido2_shared)
