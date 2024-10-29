@@ -52,7 +52,6 @@ option(USE_PKGCONFIG     "Use pkgconfig to find dependencies when compiling for 
 add_definitions(-D_FIDO_MAJOR=${FIDO_MAJOR})
 add_definitions(-D_FIDO_MINOR=${FIDO_MINOR})
 add_definitions(-D_FIDO_PATCH=${FIDO_PATCH})
-add_definitions(-D_FIDO_SUFFIX=${FIDO_SUFFIX})
 
 if(BUILD_SHARED_LIBS)
 	set(_FIDO2_LIBRARY fido2_shared)
