@@ -310,11 +310,7 @@ else()
 	add_compile_options(-Wwrite-strings)
 	add_compile_options(-Wmissing-prototypes)
 	add_compile_options(-Wbad-function-cast)
-
-	check_c_compiler_flag("-Wimplicit-fallthrough" HAVE_WIMPLICIT_FALLTHROUGH)
-	if(HAVE_WIMPLICIT_FALLTHROUGH)
-		add_compile_options(-Wimplicit-fallthrough)
-	endif()
+	add_compile_options(-Wimplicit-fallthrough)
 	add_compile_options(-pedantic)
 	add_compile_options(-pedantic-errors)
 
