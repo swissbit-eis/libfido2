@@ -162,6 +162,13 @@ transport_tx(fido_dev_t *d, uint8_t cmd, const void *buf, size_t count, int *ms)
 }
 
 int
+fido_direct_tx(fido_dev_t *d, uint8_t cmd, const void *buf, size_t count)
+{
+  int ms = d->timeout_ms;
+  return fido_tx(d, cmd, buf, count, &ms);
+}
+
+int
 fido_tx(fido_dev_t *d, uint8_t cmd, const void *buf, size_t count, int *ms)
 {
 	fido_log_debug("%s: dev=%p, cmd=0x%02x", __func__, (void *)d, cmd);
@@ -307,6 +314,13 @@ transport_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count, int *ms)
 		return (-1);
 
 	return (n);
+}
+
+int
+fido_direct_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count)
+{
+  int ms = d->timeout_ms;
+  return fido_rx(d, cmd, buf, count, &ms);
 }
 
 int
