@@ -35,11 +35,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <cbor.h>
 
 #ifdef _FIDO_INTERNAL
 #include <sys/types.h>
 
-#include <cbor.h>
 #include <limits.h>
 
 #include "../openbsd-compat/openbsd-compat.h"
@@ -72,6 +72,15 @@ void fido_dev_force_fido2(fido_dev_t *);
 void fido_dev_force_u2f(fido_dev_t *);
 void fido_dev_free(fido_dev_t **);
 void fido_dev_info_free(fido_dev_info_t **, size_t);
+void cbor_vector_free(cbor_item_t **, size_t);
+/**
+ * @brief Releases the memory that was allocated for @a bp.
+ */
+void fido_blob_free(fido_blob_t **bp);
+/**
+ * @brief Releases the memory that was allocated for @a pk. 
+ */
+void es256_pk_free(es256_pk_t **pk);
 
 /* fido_init() flags. */
 #define FIDO_DEBUG	0x01
@@ -189,6 +198,14 @@ int fido_dev_get_retry_count(fido_dev_t *, int *);
 int fido_dev_get_uv_retry_count(fido_dev_t *, int *);
 int fido_dev_get_touch_begin(fido_dev_t *);
 int fido_dev_get_touch_status(fido_dev_t *, int *, int);
+/**
+ * @brief Get the timeout in ms from the device.
+ */
+int fido_dev_get_timeout(fido_dev_t *dev);
+/**
+ * @brief Get the pin protocol of the device.
+ */
+uint8_t fido_dev_get_pin_protocol(const fido_dev_t *dev);
 int fido_dev_info_manifest(fido_dev_info_t *, size_t, size_t *);
 int fido_dev_info_set(fido_dev_info_t *, size_t, const char *, const char *,
     const char *, const fido_dev_io_t *, const fido_dev_transport_t *);
@@ -200,8 +217,38 @@ int fido_dev_set_io_functions(fido_dev_t *, const fido_dev_io_t *);
 int fido_dev_set_pin(fido_dev_t *, const char *, const char *);
 int fido_dev_set_transport_functions(fido_dev_t *, const fido_dev_transport_t *);
 int fido_dev_set_timeout(fido_dev_t *, int);
-int fido_direct_rx(fido_dev_t *, uint8_t, void *, size_t);
-int fido_direct_tx(fido_dev_t *, uint8_t, const void *, size_t);
+/**
+ * @brief Directly receive a CTAP message.
+ *
+ * @note Can not be used with WinHello.
+ * 
+ * @param dev   Device handle
+ * @param cmd   CTAP command identifier
+ * @param buf   Buffer for the response
+ * @param count Maximal count of response bytes
+ */
+int fido_direct_rx(fido_dev_t *dev, uint8_t cmd, void *buf, size_t count);
+/**
+ * @brief Directly transmits a CTAP message.
+ *
+ * @note Can not be used with WinHello.
+ * 
+ * @param dev  Device handle
+ * @param cmd  CTAP command identifier
+ * @param blob CTAP message and length
+ */
+int fido_direct_tx_blob(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *blob);
+/**
+ * @brief Directly transmits a CTAP message.
+ *
+ * @note Can not be used with WinHello.
+ * 
+ * @param dev Device handle
+ * @param cmd   CTAP command identifier
+ * @param buf   Message buffer
+ * @param count Count of bytes to transmit
+ */
+int fido_direct_tx(fido_dev_t *dev, uint8_t cmd, const void *buf, size_t count);
 
 size_t fido_assert_authdata_len(const fido_assert_t *, size_t);
 size_t fido_assert_authdata_raw_len(const fido_assert_t *, size_t);
@@ -279,6 +326,85 @@ int fido_dev_largeblob_remove(fido_dev_t *, const unsigned char *, size_t,
 int fido_dev_largeblob_get_array(fido_dev_t *, unsigned char **, size_t *);
 int fido_dev_largeblob_set_array(fido_dev_t *, const unsigned char *, size_t,
     const char *);
+
+/**
+ * @brief Converts the properties of @a assert into a list of cbor items @a argv.
+ *
+ * @param assert   getAssertion struct
+ * @param argv     List of cbor items
+ * @param argc     Number of available cbor items in @a argv, needs to be at least 5
+ * @param ecdh     Shared secret
+ * @param pk       Public key
+ * @param pin_prot Pin protocol
+ */
+int fido_build_assert_cbor(const fido_assert_t *assert, cbor_item_t **argv, size_t argc,
+    const fido_blob_t *ecdh, const es256_pk_t *pk, uint8_t pin_prot);
+/**
+ * @brief Converst a list of cbor items to a cbor byte array.
+ *
+ * @param cmd  CBOR command identifier
+ * @param argv List of cbor items
+ * @param argc Number of cbor items
+ * @param f    Blob for the cbor byte array
+ */
+int cbor_build_frame_ext(uint8_t cmd, cbor_item_t *argv[], size_t argc, fido_blob_t **f);
+
+/**
+ * @brief Generate key-agreement pair and compute shared secret.
+ *
+ * @note Can not be used with WinHello.
+ *
+ * @param dev  Device handle
+ * @param pk   Public key
+ * @param ecdh Shared secret
+ */
+int fido_do_ecdh_ext(fido_dev_t *dev, es256_pk_t **pk, fido_blob_t **ecdh);
+
+/**
+ * @brief Request a pin-uv token and decode it into cbor items for a getAssertion command.
+ *
+ * @note Can not be used with WinHello.
+ * 
+ * @param dev    Device handle
+ * @param assert getAssertion struct
+ * @param pk     Host public key
+ * @param ecdh   Shared secret
+ * @param pin    Pin
+ * @param auth   CBOR item to store the result of the authentication
+ * @param opt    CBOR item to store the PIN/UV protocol version
+ */
+int cbor_add_uv_params_assert(fido_dev_t *dev, const fido_assert_t *assert, const es256_pk_t *pk,
+    const fido_blob_t *ecdh, const char *pin, cbor_item_t **auth, cbor_item_t **opt);
+
+/**
+ * @brief Parses the content of an getAssertion response into an getAssertion struct.
+ *
+ * @details The getAssertion struct is reset prior to the parsing.
+ *
+ * @param msg    getAssertion response message
+ * @param msglen Length of the message
+ * @param assert getAssertion struct
+ */
+int fido_parse_get_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert);
+
+/**
+ * @brief Parses the content of a getNextAssertion response and adds it to an getAssertion struct.
+ *
+ * @param msg    getNextAssertion response message
+ * @param msglen Length of the message
+ * @param assert getAssertion struct
+ */
+int fido_parse_and_add_get_next_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert);
+
+/**
+ * @brief Decrypts the hmac secrets of a getAssertion response.
+ *
+ * @param pin_prot Pin protocol
+ * @param assert   getAssertion struct
+ * @param key      Shared secret to decrypt the hmac secrets
+ */
+int decrypt_hmac_secrets(uint8_t pin_prot, fido_assert_t *assert,
+    const fido_blob_t *key);
 
 #ifdef __cplusplus
 } /* extern "C" */
