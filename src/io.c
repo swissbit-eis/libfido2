@@ -164,8 +164,15 @@ transport_tx(fido_dev_t *d, uint8_t cmd, const void *buf, size_t count, int *ms)
 int
 fido_direct_tx(fido_dev_t *d, uint8_t cmd, const void *buf, size_t count)
 {
-  int ms = d->timeout_ms;
-  return fido_tx(d, cmd, buf, count, &ms);
+	int ms = d->timeout_ms;
+	return fido_tx(d, cmd, buf, count, &ms);
+}
+
+int
+fido_direct_tx_blob(fido_dev_t *d, uint8_t cmd, const fido_blob_t *blob)
+{
+	int ms = d->timeout_ms;
+	return fido_tx(d, cmd, blob->ptr, blob->len, &ms);
 }
 
 int
