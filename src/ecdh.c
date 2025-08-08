@@ -206,3 +206,10 @@ fail:
 
 	return r;
 }
+
+int
+fido_do_ecdh_ext(fido_dev_t *dev, es256_pk_t **pk, fido_blob_t **ecdh)
+{
+	int		 ms = dev->timeout_ms;
+	return fido_do_ecdh(dev, pk, ecdh, &ms);
+}

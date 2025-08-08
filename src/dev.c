@@ -604,3 +604,9 @@ fido_dev_set_timeout(fido_dev_t *dev, int ms)
 
 	return (FIDO_OK);
 }
+
+int
+fido_dev_get_timeout(fido_dev_t *dev)
+{
+	return dev->timeout_ms;
+}

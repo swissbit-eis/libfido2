@@ -28,7 +28,21 @@ extern "C" {
 /* aes256 */
 int aes256_cbc_dec(const fido_dev_t *dev, const fido_blob_t *,
     const fido_blob_t *, fido_blob_t *);
+/**
+ * @brief Aes256 cbc decryption.
+ *
+ * @details Directly takes a pin protocol parameter instead of asking the device for it.
+ */
+int aes256_cbc_dec_2(uint8_t, const fido_blob_t *,
+    const fido_blob_t *, fido_blob_t *);
 int aes256_cbc_enc(const fido_dev_t *dev, const fido_blob_t *,
+    const fido_blob_t *, fido_blob_t *);
+/**
+ * @brief Aes256 cbc encryption.
+ *
+ * @details Directly takes a pin protocol parameter instead of asking the device for it.
+ */
+int aes256_cbc_enc_2(uint8_t, const fido_blob_t *,
     const fido_blob_t *, fido_blob_t *);
 int aes256_gcm_dec(const fido_blob_t *, const fido_blob_t *,
     const fido_blob_t *, const fido_blob_t *, fido_blob_t *);
@@ -39,18 +53,23 @@ int aes256_gcm_enc(const fido_blob_t *, const fido_blob_t *,
 cbor_item_t *cbor_build_uint(const uint64_t);
 cbor_item_t *cbor_flatten_vector(cbor_item_t **, size_t);
 cbor_item_t *cbor_encode_assert_opt(fido_opt_t, fido_opt_t);
+cbor_item_t *cbor_encode_assert_ext(uint8_t, const fido_assert_ext_t *,
+    const fido_blob_t *, const es256_pk_t *);
 cbor_item_t *cbor_encode_change_pin_auth(const fido_dev_t *,
     const fido_blob_t *, const fido_blob_t *, const fido_blob_t *);
 cbor_item_t *cbor_encode_cred_ext(const fido_cred_ext_t *, const fido_blob_t *);
-cbor_item_t *cbor_encode_assert_ext(fido_dev_t *,
-    const fido_assert_ext_t *, const fido_blob_t *, const es256_pk_t *);
 cbor_item_t *cbor_encode_cred_opt(fido_opt_t, fido_opt_t);
 cbor_item_t *cbor_encode_pin_auth(const fido_dev_t *, const fido_blob_t *,
     const fido_blob_t *);
+/**
+ * @details Directly takes a pin protocol parameter instead of asking the device for it.
+ */
+cbor_item_t *cbor_encode_pin_auth_2(uint8_t, const fido_blob_t *,
+    const fido_blob_t *);
 cbor_item_t *cbor_encode_pin_opt(const fido_dev_t *);
 cbor_item_t *cbor_encode_pubkey(const fido_blob_t *);
-cbor_item_t *cbor_encode_pubkey_list(const fido_blob_array_t *);
 cbor_item_t *cbor_encode_pubkey_param(int);
+cbor_item_t *cbor_encode_pubkey_list(const fido_blob_array_t *);
 cbor_item_t *cbor_encode_rp_entity(const fido_rp_t *);
 cbor_item_t *cbor_encode_str_array(const fido_str_array_t *);
 cbor_item_t *cbor_encode_user_entity(const fido_user_t *);
@@ -92,7 +111,6 @@ int cbor_parse_reply(const unsigned char *, size_t, void *,
 int cbor_add_uv_params(fido_dev_t *, uint8_t, const fido_blob_t *,
     const es256_pk_t *, const fido_blob_t *, const char *, const char *,
     cbor_item_t **, cbor_item_t **, int *);
-void cbor_vector_free(cbor_item_t **, size_t);
 int cbor_array_append(cbor_item_t **, cbor_item_t *);
 int cbor_array_drop(cbor_item_t **, size_t);
 
@@ -187,7 +205,6 @@ int u2f_get_touch_begin(fido_dev_t *, int *);
 int u2f_get_touch_status(fido_dev_t *, int *, int *);
 
 /* unexposed fido ops */
-uint8_t fido_dev_get_pin_protocol(const fido_dev_t *);
 int fido_dev_authkey(fido_dev_t *, es256_pk_t *, int *);
 int fido_dev_get_cbor_info_wait(fido_dev_t *, fido_cbor_info_t *, int *);
 int fido_dev_get_uv_token(fido_dev_t *, uint8_t, const char *,

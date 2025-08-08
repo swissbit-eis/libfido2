@@ -198,10 +198,26 @@ aes256_cbc_enc(const fido_dev_t *dev, const fido_blob_t *secret,
 }
 
 int
+aes256_cbc_enc_2(uint8_t pin_prot, const fido_blob_t *secret,
+    const fido_blob_t *in, fido_blob_t *out)
+{
+	return pin_prot == 2 ? aes256_cbc_fips(secret,
+	    in, out, 1) : aes256_cbc_proto1(secret, in, out, 1);
+}
+
+int
 aes256_cbc_dec(const fido_dev_t *dev, const fido_blob_t *secret,
     const fido_blob_t *in, fido_blob_t *out)
 {
 	return fido_dev_get_pin_protocol(dev) == 2 ? aes256_cbc_fips(secret,
+	    in, out, 0) : aes256_cbc_proto1(secret, in, out, 0);
+}
+
+int
+aes256_cbc_dec_2(uint8_t pin_prot, const fido_blob_t *secret,
+    const fido_blob_t *in, fido_blob_t *out)
+{
+	return pin_prot == 2 ? aes256_cbc_fips(secret,
 	    in, out, 0) : aes256_cbc_proto1(secret, in, out, 0);
 }
 

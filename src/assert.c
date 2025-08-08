@@ -90,6 +90,7 @@ fido_dev_get_assert_tx(fido_dev_t *dev, fido_assert_t *assert,
 	cbor_item_t	*argv[7];
 	const uint8_t	 cmd = CTAP_CBOR_ASSERT;
 	int		 r;
+	uint8_t prot;
 
 	memset(argv, 0, sizeof(argv));
 	memset(&f, 0, sizeof(f));
@@ -119,8 +120,14 @@ fido_dev_get_assert_tx(fido_dev_t *dev, fido_assert_t *assert,
 		}
 	}
 
+	if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
+		fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
+		r = FIDO_ERR_INTERNAL;
+		goto fail;
+	}
+
 	if (assert->ext.mask)
-		if ((argv[3] = cbor_encode_assert_ext(dev, &assert->ext, ecdh,
+		if ((argv[3] = cbor_encode_assert_ext(prot, &assert->ext, ecdh,
 		    pk)) == NULL) {
 			fido_log_debug("%s: cbor_encode_assert_ext", __func__);
 			r = FIDO_ERR_INTERNAL;
@@ -160,6 +167,38 @@ fail:
 	free(f.ptr);
 
 	return (r);
+}
+
+int
+fido_build_assert_cbor(const fido_assert_t *assert, cbor_item_t **argv, size_t argc,
+    const fido_blob_t *ecdh, const es256_pk_t *pk, uint8_t pin_prot)
+{
+
+	if (argc < 5) {
+		return FIDO_ERR_ERR_OTHER;
+	}
+
+	argv[0] = cbor_build_string(assert->rp_id);
+	argv[1] = fido_blob_encode(&assert->cdh);
+
+	/* allowed credentials */
+	if (assert->allow_list.len) {
+		const fido_blob_array_t *cl = &assert->allow_list;
+		argv[2] = cbor_encode_pubkey_list(cl);
+	}
+
+
+	if (assert->ext.mask) {
+		argv[3] = cbor_encode_assert_ext(pin_prot, &assert->ext, ecdh, pk);
+	}
+
+	/* options */
+	// uv in options is deprecated
+	if (assert->up != FIDO_OPT_OMIT) {
+		argv[4] = cbor_encode_assert_opt(assert->up, FIDO_OPT_OMIT);
+	}
+
+	return FIDO_OK;
 }
 
 static int
@@ -285,14 +324,14 @@ fido_dev_get_assert_wait(fido_dev_t *dev, fido_assert_t *assert,
 	return (FIDO_OK);
 }
 
-static int
-decrypt_hmac_secrets(const fido_dev_t *dev, fido_assert_t *assert,
+int
+decrypt_hmac_secrets(uint8_t pin_prot, fido_assert_t *assert,
     const fido_blob_t *key)
 {
 	for (size_t i = 0; i < assert->stmt_cnt; i++) {
 		fido_assert_stmt *stmt = &assert->stmt[i];
 		if (stmt->authdata_ext.hmac_secret_enc.ptr != NULL) {
-			if (aes256_cbc_dec(dev, key,
+			if (aes256_cbc_dec_2(pin_prot, key,
 			    &stmt->authdata_ext.hmac_secret_enc,
 			    &stmt->hmac_secret) < 0) {
 				fido_log_debug("%s: aes256_cbc_dec %zu",
@@ -311,6 +350,7 @@ fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert, const char *pin)
 	fido_blob_t	*ecdh = NULL;
 	es256_pk_t	*pk = NULL;
 	int		 ms = dev->timeout_ms;
+	uint8_t prot; //!< Pin protocol
 	int		 r;
 
 #ifdef USE_WINHELLO
@@ -339,9 +379,15 @@ fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert, const char *pin)
 		}
 	}
 
+	if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
+		fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
+		r = FIDO_ERR_INTERNAL;
+		goto fail;
+	}
+
 	r = fido_dev_get_assert_wait(dev, assert, pk, ecdh, pin, &ms);
 	if (r == FIDO_OK && (assert->ext.mask & FIDO_EXT_HMAC_SECRET))
-		if (decrypt_hmac_secrets(dev, assert, ecdh) < 0) {
+		if (decrypt_hmac_secrets(prot, assert, ecdh) < 0) {
 			fido_log_debug("%s: decrypt_hmac_secrets", __func__);
 			r = FIDO_ERR_INTERNAL;
 			goto fail;
@@ -1167,4 +1213,65 @@ fido_assert_set_count(fido_assert_t *assert, size_t n)
 	assert->stmt_len = n;
 
 	return (FIDO_OK);
+}
+
+int
+cbor_add_uv_params_assert(fido_dev_t *dev, const fido_assert_t *assert, const es256_pk_t *pk,
+    const fido_blob_t *ecdh, const char *pin, cbor_item_t **auth, cbor_item_t **opt)
+{
+	return cbor_add_uv_params(dev, CTAP_CBOR_ASSERT, &(assert->cdh), pk, ecdh, pin, assert->rp_id, auth, opt, &(dev->timeout_ms));
+}
+
+int
+fido_parse_get_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert)
+{
+	int r;
+
+	fido_assert_reset_rx(assert);
+
+	/* start with room for a single assertion */
+	if ((assert->stmt = calloc(1, sizeof(fido_assert_stmt))) == NULL) {
+		return FIDO_ERR_INTERNAL;
+	}
+	assert->stmt_len = 0;
+	assert->stmt_cnt = 1;
+
+	/* adjust as needed */
+	if ((r = cbor_parse_reply(msg, (size_t)msglen, assert,
+	    adjust_assert_count)) != FIDO_OK) {
+		fido_log_debug("%s: adjust_assert_count", __func__);
+		return r;
+	}
+
+	/* parse the first assertion */
+	if ((r = cbor_parse_reply(msg, (size_t)msglen, &assert->stmt[0],
+	    parse_assert_reply)) != FIDO_OK) {
+		fido_log_debug("%s: parse_assert_reply", __func__);
+		return r;
+	}
+	assert->stmt_len = 1;
+
+	return FIDO_OK;
+}
+
+int
+fido_parse_and_add_get_next_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert)
+{
+	int	r;
+
+	/* sanity check */
+	if (assert->stmt_len >= assert->stmt_cnt) {
+		fido_log_debug("%s: stmt_len=%zu, stmt_cnt=%zu", __func__,
+		    assert->stmt_len, assert->stmt_cnt);
+		return FIDO_ERR_INTERNAL;
+	}
+
+	if ((r = cbor_parse_reply(msg, (size_t)msglen,
+	    &assert->stmt[assert->stmt_len], parse_assert_reply)) != FIDO_OK) {
+		fido_log_debug("%s: parse_assert_reply", __func__);
+		return r;
+	}
+	assert->stmt_len++;
+
+	return FIDO_OK;
 }
