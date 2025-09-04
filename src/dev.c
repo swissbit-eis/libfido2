@@ -98,13 +98,13 @@ fido_dev_open_tx(fido_dev_t *dev, const char *path, int *ms)
 {
 	int r;
 
-	if (dev->io_handle != NULL) {
+	if (dev->io_handle != NULL && dev->io.open != NULL) {
 		fido_log_debug("%s: handle=%p", __func__, dev->io_handle);
 		return (FIDO_ERR_INVALID_ARGUMENT);
 	}
 
-	if (dev->io.open == NULL || dev->io.close == NULL) {
-		fido_log_debug("%s: NULL open/close", __func__);
+	if (dev->io.close == NULL) {
+		fido_log_debug("%s: NULL close", __func__);
 		return (FIDO_ERR_INVALID_ARGUMENT);
 	}
 
@@ -118,7 +118,7 @@ fido_dev_open_tx(fido_dev_t *dev, const char *path, int *ms)
 		return (FIDO_ERR_INTERNAL);
 	}
 
-	if ((dev->io_handle = dev->io.open(path)) == NULL) {
+	if (dev->io.open != NULL && (dev->io_handle = dev->io.open(path)) == NULL) {
 		fido_log_debug("%s: dev->io.open", __func__);
 		return (FIDO_ERR_INTERNAL);
 	}
@@ -372,8 +372,7 @@ fido_dev_set_io_functions(fido_dev_t *dev, const fido_dev_io_t *io)
 		return (FIDO_ERR_INVALID_ARGUMENT);
 	}
 
-	if (io == NULL || io->open == NULL || io->close == NULL ||
-	    io->read == NULL || io->write == NULL) {
+	if (io == NULL || io->close == NULL || io->read == NULL || io->write == NULL) {
 		fido_log_debug("%s: NULL function", __func__);
 		return (FIDO_ERR_INVALID_ARGUMENT);
 	}
@@ -403,6 +402,10 @@ fido_dev_io_handle(const fido_dev_t *dev)
 {
 
 	return (dev->io_handle);
+}
+
+void fido_dev_set_io_handle(fido_dev_t* dev, void* handle) {
+	dev->io_handle = handle;
 }
 
 void
