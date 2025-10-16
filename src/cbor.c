@@ -1457,7 +1457,7 @@ cbor_decode_assert_authdata(const cbor_item_t *item, fido_blob_t *authdata_cbor,
 
 	authdata->sigcount = be32toh(authdata->sigcount);
 
-	if ((authdata->flags & CTAP_AUTHDATA_EXT_DATA) != 0) {
+	if ((authdata->flags & CTAP_AUTHDATA_EXT_DATA) != 0 && len != 0) {
 		if (decode_assert_extensions(&buf, &len, authdata_ext) < 0) {
 			fido_log_debug("%s: decode_assert_extensions",
 			    __func__);
