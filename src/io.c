@@ -356,15 +356,15 @@ fido_direct_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count)
   int n;
 
   fido_log_debug("%s: dev=%p, cmd=0x%02x, ms=%d", __func__, (void *)d,
-      cmd, *ms);
+      cmd, ms);
 
   if (d->transport.rx != NULL)
-    return (transport_rx(d, cmd, buf, count, ms));
+    return (transport_rx(d, cmd, buf, count, &ms));
   if (d->io_handle == NULL || d->io.read == NULL || count > UINT16_MAX) {
     fido_log_debug("%s: invalid argument", __func__);
     return (-1);
   }
-  if ((n = rx(d, cmd, buf, count, ms, true)) >= 0)
+  if ((n = rx(d, cmd, buf, count, &ms, true)) >= 0)
     fido_log_xxd(buf, (size_t)n, "%s", __func__);
 
   return (n);
