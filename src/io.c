@@ -6,7 +6,9 @@
  */
 
 #include "fido.h"
+#include "fido/param.h"
 #include "packed.h"
+#include <stdint.h>
 
 PACKED_TYPE(frame_t,
 struct frame {
@@ -209,8 +211,18 @@ rx_frame(fido_dev_t *d, struct frame *fp, int *ms)
 	return (fido_time_delta(&ts, ms));
 }
 
+/**
+ * @brief Waits for a suitable response init frame
+ *
+ * @param d      Device handle
+ * @param cmd    CTAP command identifier
+ * @param fp     Frame to save the response to
+ * @param ms     Timeout in ms
+ * @param extCmd Flag to indicate if `CTAP_KEEPALIVE` commands should be accepted
+ *               (when given as a command identifier)
+ */
 static int
-rx_preamble(fido_dev_t *d, uint8_t cmd, struct frame *fp, int *ms)
+rx_preamble(fido_dev_t *d, uint8_t cmd, struct frame *fp, int *ms, bool extCmd)
 {
 	do {
 		if (rx_frame(d, fp, ms) < 0)
@@ -218,8 +230,11 @@ rx_preamble(fido_dev_t *d, uint8_t cmd, struct frame *fp, int *ms)
 #ifdef FIDO_FUZZ
 		fp->cid = d->cid;
 #endif
-	} while (fp->cid != d->cid || (fp->cid == d->cid &&
-	    fp->body.init.cmd == (CTAP_FRAME_INIT | CTAP_KEEPALIVE)));
+	} while (fp->cid != d->cid ||
+            (fp->body.init.cmd == (CTAP_FRAME_INIT | CTAP_KEEPALIVE) &&
+              !(extCmd && cmd == CTAP_KEEPALIVE)
+            )
+          );
 
 	if (d->rx_len > sizeof(*fp))
 		return (-1);
@@ -238,8 +253,19 @@ rx_preamble(fido_dev_t *d, uint8_t cmd, struct frame *fp, int *ms)
 	return (0);
 }
 
+/**
+ * @brief Handles the reception of a suited response
+ *
+ * @param d      Device handle
+ * @param cmd    CTAP command identifier
+ * @param buf    Buffer for the response
+ * @param count  Maximal count of response bytes
+ * @param ms     Timeout in ms
+ * @param extCmd Flag to indicate if `CTAP_KEEPALIVE` commands should be accepted
+ *               (when given as a command identifier)
+ */
 static int
-rx(fido_dev_t *d, uint8_t cmd, unsigned char *buf, size_t count, int *ms)
+rx(fido_dev_t *d, uint8_t cmd, unsigned char *buf, size_t count, int *ms, bool extCmd)
 {
 	struct frame f;
 	size_t r, payload_len, init_data_len, cont_data_len;
@@ -255,7 +281,7 @@ rx(fido_dev_t *d, uint8_t cmd, unsigned char *buf, size_t count, int *ms)
 	    cont_data_len > sizeof(f.body.cont.data))
 		return (-1);
 
-	if (rx_preamble(d, cmd, &f, ms) < 0) {
+	if (rx_preamble(d, cmd, &f, ms, extCmd) < 0) {
 		fido_log_debug("%s: rx_preamble", __func__);
 		return (-1);
 	}
@@ -327,7 +353,21 @@ int
 fido_direct_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count)
 {
   int ms = d->timeout_ms;
-  return fido_rx(d, cmd, buf, count, &ms);
+  int n;
+
+  fido_log_debug("%s: dev=%p, cmd=0x%02x, ms=%d", __func__, (void *)d,
+      cmd, *ms);
+
+  if (d->transport.rx != NULL)
+    return (transport_rx(d, cmd, buf, count, ms));
+  if (d->io_handle == NULL || d->io.read == NULL || count > UINT16_MAX) {
+    fido_log_debug("%s: invalid argument", __func__);
+    return (-1);
+  }
+  if ((n = rx(d, cmd, buf, count, ms, true)) >= 0)
+    fido_log_xxd(buf, (size_t)n, "%s", __func__);
+
+  return (n);
 }
 
 int
@@ -344,7 +384,7 @@ fido_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count, int *ms)
 		fido_log_debug("%s: invalid argument", __func__);
 		return (-1);
 	}
-	if ((n = rx(d, cmd, buf, count, ms)) >= 0)
+	if ((n = rx(d, cmd, buf, count, ms, false)) >= 0)
 		fido_log_xxd(buf, (size_t)n, "%s", __func__);
 
 	return (n);
