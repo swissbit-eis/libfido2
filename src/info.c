@@ -151,6 +151,36 @@ decode_protocols(const cbor_item_t *item, fido_byte_array_t *p)
 }
 
 static int
+decode_uint64(const cbor_item_t *item, void *arg)
+{
+  return cbor_decode_uint64(item, (uint64_t *) arg);
+}
+
+static int
+decode_vendorConfigCmds(const cbor_item_t *item, fido_uint64_array_t *p)
+{
+	p->ptr = NULL;
+	p->len = 0;
+
+	if (cbor_isa_array(item) == false ||
+	    cbor_array_is_definite(item) == false) {
+		fido_log_debug("%s: cbor type", __func__);
+		return (-1);
+	}
+
+	p->ptr = calloc(cbor_array_size(item), sizeof(uint64_t));
+	if (p->ptr == NULL)
+		return (-1);
+
+	if (cbor_array_iter(item, p, decode_uint64) < 0) {
+		fido_log_debug("%s: cbor_decode_uint64", __func__);
+		return (-1);
+	}
+
+	return (0);
+}
+
+static int
 decode_algorithm_entry(const cbor_item_t *key, const cbor_item_t *val,
     void *arg)
 {
@@ -337,6 +367,9 @@ parse_reply_element(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 		}
 		ci->rk_remaining = (int64_t)x;
 		return (0);
+  case 21: /* vendorPrototypeConfigCommands */
+		return (decode_vendorConfigCmds(val, &ci->vendorConfigCmds));
+    return 0;
 	default: /* ignore */
 		fido_log_debug("%s: cbor type: 0x%02x", __func__, cbor_get_uint8(key));
 		return (0);
