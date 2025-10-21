@@ -153,7 +153,20 @@ decode_protocols(const cbor_item_t *item, fido_byte_array_t *p)
 static int
 decode_uint64(const cbor_item_t *item, void *arg)
 {
-  return cbor_decode_uint64(item, (uint64_t *) arg);
+  fido_uint64_array_t	*p = arg;
+	const size_t		 i = p->len;
+
+	if (cbor_isa_uint(item) == false ||
+	    cbor_int_get_width(item) != CBOR_INT_64) {
+		fido_log_debug("%s: cbor type", __func__);
+		return (-1);
+	}
+
+	/* keep ptr[x] and len consistent */
+	p->ptr[i] = cbor_get_int(item);
+	p->len++;
+
+	return (0);
 }
 
 static int
@@ -369,7 +382,7 @@ parse_reply_element(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 		return (0);
   case 21: /* vendorPrototypeConfigCommands */
 		return (decode_vendorConfigCmds(val, &ci->vendorConfigCmds));
-    return 0;
+    return (0);
 	default: /* ignore */
 		fido_log_debug("%s: cbor type: 0x%02x", __func__, cbor_get_uint8(key));
 		return (0);
@@ -677,4 +690,16 @@ size_t
 fido_cbor_info_certs_len(const fido_cbor_info_t *ci)
 {
 	return (ci->certs.len);
+}
+
+const uint64_t *
+fido_cbor_info_vendor_prototype_config_commands_ptr(const fido_cbor_info_t *ci)
+{
+	return (ci->vendorConfigCmds.ptr);
+}
+
+size_t
+fido_cbor_info_vendor_prototype_config_commands_len(const fido_cbor_info_t *ci)
+{
+	return (ci->vendorConfigCmds.len);
 }
