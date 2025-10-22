@@ -382,7 +382,6 @@ parse_reply_element(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 		return (0);
   case 21: /* vendorPrototypeConfigCommands */
 		return (decode_vendorConfigCmds(val, &ci->vendorConfigCmds));
-    return (0);
 	default: /* ignore */
 		fido_log_debug("%s: cbor type: 0x%02x", __func__, cbor_get_uint8(key));
 		return (0);
