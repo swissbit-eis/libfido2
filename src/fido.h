@@ -226,8 +226,9 @@ int fido_dev_set_timeout(fido_dev_t *, int);
  * @param cmd   CTAP command identifier
  * @param buf   Buffer for the response
  * @param count Maximal count of response bytes
+ * @param ms    Overwrites the device timeout if >= 0
  */
-int fido_direct_rx(fido_dev_t *dev, uint8_t cmd, void *buf, size_t count);
+int fido_direct_rx(fido_dev_t *dev, uint8_t cmd, void *buf, size_t count, int ms);
 /**
  * @brief Directly transmits a CTAP message.
  *
@@ -236,8 +237,9 @@ int fido_direct_rx(fido_dev_t *dev, uint8_t cmd, void *buf, size_t count);
  * @param dev  Device handle
  * @param cmd  CTAP command identifier
  * @param blob CTAP message and length
+ * @param ms   Overwrites the device timeout if >= 0
  */
-int fido_direct_tx_blob(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *blob);
+int fido_direct_tx_blob(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *blob, int ms);
 /**
  * @brief Directly transmits a CTAP message.
  *
@@ -247,8 +249,9 @@ int fido_direct_tx_blob(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *blob);
  * @param cmd   CTAP command identifier
  * @param buf   Message buffer
  * @param count Count of bytes to transmit
+ * @param ms    Overwrites the device timeout if >= 0
  */
-int fido_direct_tx(fido_dev_t *dev, uint8_t cmd, const void *buf, size_t count);
+int fido_direct_tx(fido_dev_t *dev, uint8_t cmd, const void *buf, size_t count, int ms);
 
 size_t fido_assert_authdata_len(const fido_assert_t *, size_t);
 size_t fido_assert_authdata_raw_len(const fido_assert_t *, size_t);
