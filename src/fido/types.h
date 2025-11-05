@@ -340,6 +340,7 @@ typedef struct es256_sk es256_sk_t;
 typedef struct es384_pk es384_pk_t;
 typedef struct rs256_pk rs256_pk_t;
 typedef struct eddsa_pk eddsa_pk_t;
+typedef struct fido_blob fido_blob_t;
 #endif /* _FIDO_INTERNAL */
 
 #ifdef __cplusplus
