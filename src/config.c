@@ -151,7 +151,7 @@ fido_dev_toggle_always_uv(fido_dev_t *dev, const char *pin)
 }
 
 static int
-config_get_active_interfaces_wait(fido_dev_t *dev, uint8_t *activeInterfaces, int *ms)
+config_get_active_interfaces_wait(fido_dev_t *dev, uint8_t *activeInterfaces, const char *pin, int *ms)
 {
 	cbor_item_t *argv[1];
 	unsigned char	*msg;
@@ -166,7 +166,7 @@ config_get_active_interfaces_wait(fido_dev_t *dev, uint8_t *activeInterfaces, in
 		goto fail;
   }
 
-	if ((r = config_tx(dev, CMD_VENDOR_PROTOTYPE, argv, nitems(argv), NULL,
+	if ((r = config_tx(dev, CMD_VENDOR_PROTOTYPE, argv, nitems(argv), pin,
 	    ms)) != FIDO_OK)
 		return r;
 
@@ -195,15 +195,15 @@ fail:
 }
 
 int
-fido_dev_get_active_interfaces(fido_dev_t *dev, uint8_t *activeInterfaces)
+fido_dev_get_active_interfaces(fido_dev_t *dev, uint8_t *activeInterfaces, const char *pin)
 {
 	int ms = dev->timeout_ms;
 
-	return config_get_active_interfaces_wait(dev, activeInterfaces, &ms);
+	return config_get_active_interfaces_wait(dev, activeInterfaces, pin, &ms);
 }
 
 static int
-config_set_active_interfaces_wait(fido_dev_t *dev, const uint8_t activeInterfaces, int *ms)
+config_set_active_interfaces_wait(fido_dev_t *dev, const uint8_t activeInterfaces, const char *pin, int *ms)
 {
 	cbor_item_t *argv[2];
 	int r;
@@ -222,7 +222,7 @@ config_set_active_interfaces_wait(fido_dev_t *dev, const uint8_t activeInterface
 		goto fail;
 	}
 
-	if ((r = config_tx(dev, CMD_VENDOR_PROTOTYPE, argv, nitems(argv), NULL,
+	if ((r = config_tx(dev, CMD_VENDOR_PROTOTYPE, argv, nitems(argv), pin,
 	    ms)) != FIDO_OK)
 		return r;
 
@@ -235,11 +235,11 @@ fail:
 }
 
 int
-fido_dev_set_active_interfaces(fido_dev_t *dev, const uint8_t activeInterfaces)
+fido_dev_set_active_interfaces(fido_dev_t *dev, const uint8_t activeInterfaces, const char *pin)
 {
 	int ms = dev->timeout_ms;
 
-	return config_set_active_interfaces_wait(dev, activeInterfaces, &ms);
+	return config_set_active_interfaces_wait(dev, activeInterfaces, pin, &ms);
 }
 
 static int
