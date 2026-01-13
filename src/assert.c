@@ -120,19 +120,19 @@ fido_dev_get_assert_tx(fido_dev_t *dev, fido_assert_t *assert,
 		}
 	}
 
-	if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
-		fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
-		r = FIDO_ERR_INTERNAL;
-		goto fail;
-	}
-
-	if (assert->ext.mask)
+	if (assert->ext.mask) {
+		if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
+			fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
+			r = FIDO_ERR_INTERNAL;
+			goto fail;
+		}
 		if ((argv[3] = cbor_encode_assert_ext(prot, &assert->ext, ecdh,
 		    pk)) == NULL) {
 			fido_log_debug("%s: cbor_encode_assert_ext", __func__);
 			r = FIDO_ERR_INTERNAL;
 			goto fail;
 		}
+	}
 
 	/* user verification */
 	if (pin != NULL || (uv == FIDO_OPT_TRUE &&
@@ -379,19 +379,19 @@ fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert, const char *pin)
 		}
 	}
 
-	if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
-		fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
-		r = FIDO_ERR_INTERNAL;
-		goto fail;
-	}
-
 	r = fido_dev_get_assert_wait(dev, assert, pk, ecdh, pin, &ms);
-	if (r == FIDO_OK && (assert->ext.mask & FIDO_EXT_HMAC_SECRET))
+	if (r == FIDO_OK && (assert->ext.mask & FIDO_EXT_HMAC_SECRET)) {
+		if ((prot = fido_dev_get_pin_protocol(dev)) == 0) {
+			fido_log_debug("%s: fido_dev_get_pin_protocol", __func__);
+			r = FIDO_ERR_INTERNAL;
+			goto fail;
+		}
 		if (decrypt_hmac_secrets(prot, assert, ecdh) < 0) {
 			fido_log_debug("%s: decrypt_hmac_secrets", __func__);
 			r = FIDO_ERR_INTERNAL;
 			goto fail;
 		}
+	}
 
 fail:
 	es256_pk_free(&pk);
