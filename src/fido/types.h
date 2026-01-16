@@ -246,6 +246,11 @@ typedef struct fido_byte_array {
 	size_t len;
 } fido_byte_array_t;
 
+typedef struct fido_uint64_array {
+  uint64_t *ptr;
+  size_t len;
+} fido_uint64_array_t;
+
 typedef struct fido_algo {
 	char *type;
 	int cose;
@@ -263,26 +268,27 @@ typedef struct fido_cert_array {
 } fido_cert_array_t;
 
 typedef struct fido_cbor_info {
-	fido_str_array_t  versions;       /* supported versions: fido2|u2f */
-	fido_str_array_t  extensions;     /* list of supported extensions */
-	fido_str_array_t  transports;     /* list of supported transports */
-	unsigned char     aaguid[16];     /* aaguid */
-	fido_opt_array_t  options;        /* list of supported options */
-	uint64_t          maxmsgsiz;      /* maximum message size */
-	fido_byte_array_t protocols;      /* supported pin protocols */
-	fido_algo_array_t algorithms;     /* list of supported algorithms */
-	uint64_t          maxcredcntlst;  /* max credentials in list */
-	uint64_t          maxcredidlen;   /* max credential ID length */
-	uint64_t          fwversion;      /* firmware version */
-	uint64_t          maxcredbloblen; /* max credBlob length */
-	uint64_t          maxlargeblob;   /* max largeBlob array length */
-	uint64_t          maxrpid_minlen; /* max rpid in set_pin_minlen_rpid */
-	uint64_t          minpinlen;      /* min pin len enforced */
-	uint64_t          uv_attempts;    /* platform uv attempts */
-	uint64_t          uv_modality;    /* bitmask of supported uv types */
-	int64_t           rk_remaining;   /* remaining resident credentials */
-	bool              new_pin_reqd;   /* new pin required */
-	fido_cert_array_t certs;          /* associated certifications */
+	fido_str_array_t    versions;         /* supported versions: fido2|u2f */
+	fido_str_array_t    extensions;       /* list of supported extensions */
+	fido_str_array_t    transports;       /* list of supported transports */
+	unsigned char       aaguid[16];       /* aaguid */
+	fido_opt_array_t    options;          /* list of supported options */
+	uint64_t            maxmsgsiz;        /* maximum message size */
+	fido_byte_array_t   protocols;        /* supported pin protocols */
+	fido_algo_array_t   algorithms;       /* list of supported algorithms */
+	uint64_t            maxcredcntlst;    /* max credentials in list */
+	uint64_t            maxcredidlen;     /* max credential ID length */
+	uint64_t            fwversion;        /* firmware version */
+	uint64_t            maxcredbloblen;   /* max credBlob length */
+	uint64_t            maxlargeblob;     /* max largeBlob array length */
+	uint64_t            maxrpid_minlen;   /* max rpid in set_pin_minlen_rpid */
+	uint64_t            minpinlen;        /* min pin len enforced */
+	uint64_t            uv_attempts;      /* platform uv attempts */
+	uint64_t            uv_modality;      /* bitmask of supported uv types */
+	int64_t             rk_remaining;     /* remaining resident credentials */
+	bool                new_pin_reqd;     /* new pin required */
+	fido_cert_array_t   certs;            /* associated certifications */
+  fido_uint64_array_t vendorConfigCmds; /* array of vendor prototype config command ids*/
 } fido_cbor_info_t;
 
 typedef struct fido_dev_info {

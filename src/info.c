@@ -151,6 +151,49 @@ decode_protocols(const cbor_item_t *item, fido_byte_array_t *p)
 }
 
 static int
+decode_uint64(const cbor_item_t *item, void *arg)
+{
+  fido_uint64_array_t	*p = arg;
+	const size_t		 i = p->len;
+
+	if (cbor_isa_uint(item) == false ||
+	    cbor_int_get_width(item) != CBOR_INT_64) {
+		fido_log_debug("%s: cbor type", __func__);
+		return (-1);
+	}
+
+	/* keep ptr[x] and len consistent */
+	p->ptr[i] = cbor_get_int(item);
+	p->len++;
+
+	return (0);
+}
+
+static int
+decode_vendorConfigCmds(const cbor_item_t *item, fido_uint64_array_t *p)
+{
+	p->ptr = NULL;
+	p->len = 0;
+
+	if (cbor_isa_array(item) == false ||
+	    cbor_array_is_definite(item) == false) {
+		fido_log_debug("%s: cbor type", __func__);
+		return (-1);
+	}
+
+	p->ptr = calloc(cbor_array_size(item), sizeof(uint64_t));
+	if (p->ptr == NULL)
+		return (-1);
+
+	if (cbor_array_iter(item, p, decode_uint64) < 0) {
+		fido_log_debug("%s: cbor_decode_uint64", __func__);
+		return (-1);
+	}
+
+	return (0);
+}
+
+static int
 decode_algorithm_entry(const cbor_item_t *key, const cbor_item_t *val,
     void *arg)
 {
@@ -337,6 +380,8 @@ parse_reply_element(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 		}
 		ci->rk_remaining = (int64_t)x;
 		return (0);
+  case 21: /* vendorPrototypeConfigCommands */
+		return (decode_vendorConfigCmds(val, &ci->vendorConfigCmds));
 	default: /* ignore */
 		fido_log_debug("%s: cbor type: 0x%02x", __func__, cbor_get_uint8(key));
 		return (0);
@@ -439,6 +484,7 @@ fido_cbor_info_reset(fido_cbor_info_t *ci)
 	fido_byte_array_free(&ci->protocols);
 	fido_algo_array_free(&ci->algorithms);
 	fido_cert_array_free(&ci->certs);
+  fido_uint64_array_free(&ci->vendorConfigCmds);
 	ci->rk_remaining = -1;
 }
 
@@ -644,4 +690,16 @@ size_t
 fido_cbor_info_certs_len(const fido_cbor_info_t *ci)
 {
 	return (ci->certs.len);
+}
+
+const uint64_t *
+fido_cbor_info_vendor_prototype_config_commands_ptr(const fido_cbor_info_t *ci)
+{
+	return (ci->vendorConfigCmds.ptr);
+}
+
+size_t
+fido_cbor_info_vendor_prototype_config_commands_len(const fido_cbor_info_t *ci)
+{
+	return (ci->vendorConfigCmds.len);
 }
