@@ -484,6 +484,7 @@ fido_cbor_info_reset(fido_cbor_info_t *ci)
 	fido_byte_array_free(&ci->protocols);
 	fido_algo_array_free(&ci->algorithms);
 	fido_cert_array_free(&ci->certs);
+  fido_uint64_array_free(&ci->vendorConfigCmds);
 	ci->rk_remaining = -1;
 }
 

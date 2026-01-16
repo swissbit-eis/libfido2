@@ -72,6 +72,15 @@ fido_cert_array_free(fido_cert_array_t *ca)
 	ca->len = 0;
 }
 
+void
+fido_uint64_array_free(fido_uint64_array_t *ua)
+{
+	free(ua->ptr);
+
+	ua->ptr = NULL;
+	ua->len = 0;
+}
+
 int
 fido_str_array_pack(fido_str_array_t *sa, const char * const *v, size_t n)
 {
