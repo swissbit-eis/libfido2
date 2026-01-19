@@ -214,6 +214,7 @@ uint64_t fido_dev_maxmsgsize(const fido_dev_t *);
 int fido_do_ecdh(fido_dev_t *, es256_pk_t **, fido_blob_t **, int *);
 
 /* types */
+void fido_uint64_array_free(fido_uint64_array_t *);
 void fido_algo_array_free(fido_algo_array_t *);
 void fido_byte_array_free(fido_byte_array_t *);
 void fido_cert_array_free(fido_cert_array_t *);

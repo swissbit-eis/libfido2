@@ -8,10 +8,16 @@
 #include "fido.h"
 #include "fido/config.h"
 #include "fido/es256.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #define CMD_ENABLE_ENTATTEST	0x01
 #define CMD_TOGGLE_ALWAYS_UV	0x02
 #define CMD_SET_PIN_MINLEN	0x03
+#define CMD_VENDOR_PROTOTYPE	0xFF
+
+#define AUTH_CONFIG_SET_INTERFACE_OPTIONS_VENDOR_ID 0xb31e5238caa45176
+#define AUTH_CONFIG_GET_INTERFACE_OPTIONS_VENDOR_ID 0x9b0ea7cd75180979
 
 static int
 config_prepare_hmac(uint8_t subcmd, const cbor_item_t *item, fido_blob_t *hmac)
@@ -142,6 +148,106 @@ fido_dev_toggle_always_uv(fido_dev_t *dev, const char *pin)
 	int ms = dev->timeout_ms;
 
 	return config_toggle_always_uv_wait(dev, pin, &ms);
+}
+static int config_vendor_prototype_tx(fido_dev_t *dev, uint64_t vendor_id,
+                                      cbor_item_t *item, const char *pin,
+                                      int *ms)
+{
+  cbor_item_t *argv[2];
+  int r;
+
+  memset(argv, 0, sizeof(argv));
+
+  if ((argv[0] = cbor_build_uint64(vendor_id)) == NULL) {
+    fido_log_debug("%s: cbor_encode_uint64", __func__);
+    r = FIDO_ERR_INTERNAL;
+    goto fail;
+  }
+
+  size_t nitems = 1;
+  if (item != NULL) {
+    argv[1] = item;
+    nitems = 2;
+  }
+
+  r = config_tx(dev, CMD_VENDOR_PROTOTYPE, argv, nitems, pin, ms);
+
+fail:
+  cbor_vector_free(argv, nitems(argv));
+
+  return r;
+}
+
+static int
+config_vendor_prototype_rx(fido_dev_t *dev, uint8_t *out, int *ms)
+{
+	unsigned char *msg;
+	int msglen = 0;
+	int r;
+
+	if ((msg = malloc(FIDO_MAXMSG)) == NULL) {
+		r = FIDO_ERR_INTERNAL;
+		goto fail;
+	}
+
+	if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, FIDO_MAXMSG, ms)) < 0 ||
+	    msglen < 2) {
+		fido_log_debug("%s: fido_rx", __func__);
+		r = FIDO_ERR_RX;
+		goto fail;
+	}
+
+	r = (int)msg[0];
+	if (r == FIDO_OK && out != NULL)
+		*out = msg[1];
+
+fail:
+	freezero(msg, FIDO_MAXMSG);
+	return r;
+}
+
+static int
+config_get_active_interfaces_wait(fido_dev_t *dev, uint8_t *activeInterfaces, const char *pin, int *ms)
+{
+	int r;
+	if ((r = config_vendor_prototype_tx(dev, (uint64_t) AUTH_CONFIG_GET_INTERFACE_OPTIONS_VENDOR_ID, NULL, pin, ms)) != FIDO_OK) {
+		return r;
+  }
+	return config_vendor_prototype_rx(dev, activeInterfaces, ms);
+}
+
+int
+fido_dev_get_active_interfaces(fido_dev_t *dev, uint8_t *activeInterfaces, const char *pin)
+{
+	int ms = dev->timeout_ms;
+
+	return config_get_active_interfaces_wait(dev, activeInterfaces, pin, &ms);
+}
+
+static int
+config_set_active_interfaces_wait(fido_dev_t *dev, const uint8_t activeInterfaces, const char *pin, int *ms)
+{
+  cbor_item_t *item = NULL;
+	int r;
+
+	if (activeInterfaces && (item = cbor_build_uint8(activeInterfaces)) == NULL) {
+		fido_log_debug("%s: cbor_encode_uint8", __func__);
+		return FIDO_ERR_INTERNAL;
+	}
+
+	if ((r = config_vendor_prototype_tx(dev, (uint64_t) AUTH_CONFIG_SET_INTERFACE_OPTIONS_VENDOR_ID, item, pin,
+	    ms)) != FIDO_OK)
+		return r;
+
+	return (fido_rx_cbor_status(dev, ms));
+}
+
+int
+fido_dev_set_active_interfaces(fido_dev_t *dev, const uint8_t activeInterfaces, const char *pin)
+{
+	int ms = dev->timeout_ms;
+
+	return config_set_active_interfaces_wait(dev, activeInterfaces, pin, &ms);
 }
 
 static int
