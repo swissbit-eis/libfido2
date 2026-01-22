@@ -365,6 +365,8 @@ int cbor_build_frame_ext(uint8_t cmd, cbor_item_t *argv[], size_t argc, fido_blo
  */
 int fido_do_ecdh_ext(fido_dev_t *dev, es256_pk_t **pk, fido_blob_t **ecdh);
 
+cbor_item_t * es256_pk_encode(const es256_pk_t *pk, int ecdh);
+
 /**
  * @brief Request a pin-uv token and decode it into cbor items for a getAssertion command.
  *
