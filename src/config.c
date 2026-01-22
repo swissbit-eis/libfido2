@@ -16,6 +16,7 @@
 #define CMD_SET_PIN_MINLEN	0x03
 #define CMD_VENDOR_PROTOTYPE	0xFF
 
+#define AUTH_CONFIG_TOGGLE_GLOBAL_PIN_VENDOR_ID 0xb6dbe87e54f0dc59
 #define AUTH_CONFIG_SET_INTERFACE_OPTIONS_VENDOR_ID 0xb31e5238caa45176
 #define AUTH_CONFIG_GET_INTERFACE_OPTIONS_VENDOR_ID 0x9b0ea7cd75180979
 
@@ -248,6 +249,32 @@ fido_dev_set_active_interfaces(fido_dev_t *dev, const uint8_t activeInterfaces, 
 	int ms = dev->timeout_ms;
 
 	return config_set_active_interfaces_wait(dev, activeInterfaces, pin, &ms);
+}
+
+static int
+config_toggle_global_pin_wait(fido_dev_t *dev, const uint8_t pinId, const char *pin, int *ms)
+{
+  cbor_item_t *item = NULL;
+	int r;
+
+	if (pinId && (item = cbor_build_uint8(pinId)) == NULL) {
+		fido_log_debug("%s: cbor_encode_uint8", __func__);
+		return FIDO_ERR_INTERNAL;
+	}
+
+	if ((r = config_vendor_prototype_tx(dev, (uint64_t) AUTH_CONFIG_TOGGLE_GLOBAL_PIN_VENDOR_ID, item, pin,
+	    ms)) != FIDO_OK)
+		return r;
+
+	return (fido_rx_cbor_status(dev, ms));
+}
+
+int
+fido_dev_toggle_global_pin(fido_dev_t *dev, const uint8_t pinId, const char *pin)
+{
+  int ms = dev->timeout_ms;
+
+  return config_toggle_global_pin_wait(dev, pinId, pin, &ms);
 }
 
 static int

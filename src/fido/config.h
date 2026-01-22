@@ -53,6 +53,7 @@ int fido_dev_set_pin_minlen_rpid(fido_dev_t *, const char * const *, size_t,
     const char *);
 int fido_dev_get_active_interfaces(fido_dev_t *, uint8_t *, const char *);
 int fido_dev_set_active_interfaces(fido_dev_t *, const uint8_t, const char *);
+int fido_dev_toggle_global_pin(fido_dev_t *, const uint8_t, const char *);
 
 #ifdef __cplusplus
 } /* extern "C" */
