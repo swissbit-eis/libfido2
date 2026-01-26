@@ -178,6 +178,11 @@ fail:
   return r;
 }
 
+/**
+* This is a helper function for vendor prototype command reception, where a
+* return value (other than the CTAP status) is expected.
+* NOTE: currently this function only accept a single byte return value.
+*/
 static int
 config_vendor_prototype_rx(fido_dev_t *dev, uint8_t *out, int *ms)
 {
@@ -191,15 +196,21 @@ config_vendor_prototype_rx(fido_dev_t *dev, uint8_t *out, int *ms)
 	}
 
 	if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, FIDO_MAXMSG, ms)) < 0 ||
-	    msglen < 2) {
+	    msglen < 1) {
 		fido_log_debug("%s: fido_rx", __func__);
 		r = FIDO_ERR_RX;
 		goto fail;
 	}
 
 	r = (int)msg[0];
-	if (r == FIDO_OK && out != NULL)
-		*out = msg[1];
+	if (r == FIDO_OK && out != NULL) {
+    if (msglen < 2) {
+      fido_log_debug("%s: fido_rx", __func__);
+      r = FIDO_ERR_RX;
+      goto fail;
+    }
+    *out = msg[1];
+  }
 
 fail:
 	freezero(msg, FIDO_MAXMSG);
