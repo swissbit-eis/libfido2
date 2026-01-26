@@ -181,7 +181,7 @@ fail:
 /**
 * This is a helper function for vendor prototype command reception, where a
 * return value (other than the CTAP status) is expected.
-* NOTE: currently this function only accept a single byte return value.
+* NOTE: currently this function only accepts a single byte return value.
 */
 static int
 config_vendor_prototype_rx(fido_dev_t *dev, uint8_t *out, int *ms)
