@@ -769,6 +769,12 @@ cbor_encode_pin_opt(const fido_dev_t *dev)
 }
 
 cbor_item_t *
+cbor_encode_pin_opt_2(uint8_t prot)
+{
+	return (cbor_build_uint8(prot));
+}
+
+cbor_item_t *
 cbor_encode_change_pin_auth(const fido_dev_t *dev, const fido_blob_t *secret,
     const fido_blob_t *new_pin_enc, const fido_blob_t *pin_hash_enc)
 {

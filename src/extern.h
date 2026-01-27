@@ -67,6 +67,7 @@ cbor_item_t *cbor_encode_pin_auth(const fido_dev_t *, const fido_blob_t *,
 cbor_item_t *cbor_encode_pin_auth_2(uint8_t, const fido_blob_t *,
     const fido_blob_t *);
 cbor_item_t *cbor_encode_pin_opt(const fido_dev_t *);
+cbor_item_t *cbor_encode_pin_opt_2(uint8_t);
 cbor_item_t *cbor_encode_pubkey(const fido_blob_t *);
 cbor_item_t *cbor_encode_pubkey_param(int);
 cbor_item_t *cbor_encode_pubkey_list(const fido_blob_array_t *);
