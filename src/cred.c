@@ -173,6 +173,49 @@ fail:
 	return (r);
 }
 
+int
+fido_build_cred_cbor(fido_cred_t *cred, cbor_item_t **argv, size_t argc,
+	const fido_blob_t *token, uint8_t pin_prot)
+{
+	if (argc < 10) {
+		return FIDO_ERR_ERR_OTHER;
+	}
+
+	argv[0] = fido_blob_encode(&cred->cdh);
+	argv[1] = cbor_encode_rp_entity(&cred->rp);
+	argv[2] = cbor_encode_user_entity(&cred->user);
+	argv[3] = cbor_encode_pubkey_param(cred->type);
+
+	/* excluded credentials */
+	if (cred->excl.len) {
+		argv[4] = cbor_encode_pubkey_list(&cred->excl);
+	}
+
+	/* extensions */
+	if (cred->ext.mask) {
+		argv[5] = cbor_encode_cred_ext(&cred->ext, &cred->blob);
+	}
+
+	/* user verification */
+	if (!fido_blob_is_empty(token)) {
+		argv[7] = cbor_encode_pin_auth_2(pin_prot, token, &(cred->cdh));
+		argv[8] = cbor_encode_pin_opt_2(pin_prot);
+	}
+
+	/* options */
+	// uv in options is deprecated
+	if (cred->rk != FIDO_OPT_OMIT) {
+		argv[6] = cbor_encode_cred_opt(cred->rk, FIDO_OPT_OMIT);
+	}
+
+	/* enterprise attestation */
+	if (cred->ea.mode != 0) {
+		argv[9] = cbor_build_uint8((uint8_t)cred->ea.mode);
+	}
+
+	return FIDO_OK;
+}
+
 static int
 fido_dev_make_cred_rx(fido_dev_t *dev, fido_cred_t *cred, int *ms)
 {
