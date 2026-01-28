@@ -756,6 +756,64 @@ fail:
 	return (r);
 }
 
+int
+check_if_u2f_available(fido_dev_t *dev, int *ms) {
+	unsigned char	*reply = NULL;
+  int reply_len;
+	int		 r;
+
+	if ((reply = malloc(FIDO_MAXMSG)) == NULL) {
+		fido_log_debug("%s: malloc", __func__);
+		r = FIDO_ERR_INTERNAL;
+		goto fail;
+	}
+
+  if ((r = u2f_version(dev, reply, FIDO_MAXMSG, &reply_len, ms)) != FIDO_OK) {
+		fido_log_debug("%s: u2f_version", __func__);
+		goto fail;
+  }
+  if (reply[reply_len - 2] != 0x90 || reply[reply_len - 1] != 0x00) {
+    r = FIDO_ERR_UNSUPPORTED_OPTION;
+  } else {
+    r = FIDO_OK;
+  }
+
+fail:
+	freezero(reply, FIDO_MAXMSG);
+	return (r);
+}
+
+int
+u2f_version(fido_dev_t *dev, unsigned char *buf, size_t buf_len, int *reply_len, int *ms) {
+	iso7816_apdu_t	*apdu = NULL;
+	int		 r = FIDO_OK;
+
+	if ((apdu = iso7816_new(0, U2F_CMD_VERSION, 0, 0)) == NULL) {
+		fido_log_debug("%s: iso7816", __func__);
+		r = FIDO_ERR_INTERNAL;
+		goto fail;
+	}
+
+  if (fido_tx(dev, CTAP_CMD_MSG, iso7816_ptr(apdu),
+      4, ms) < 0) {
+    fido_log_debug("%s: fido_tx", __func__);
+    r = FIDO_ERR_TX;
+    goto fail;
+  }
+  if ((*reply_len = fido_rx(dev, CTAP_CMD_MSG, buf,
+      buf_len, ms)) < 2) {
+    fido_log_debug("%s: fido_rx", __func__);
+    r = FIDO_ERR_RX;
+    goto fail;
+  }
+
+fail:
+	iso7816_free(&apdu);
+
+	return (r);
+
+}
+
 static int
 u2f_authenticate_single(fido_dev_t *dev, const fido_blob_t *key_id,
     fido_assert_t *fa, size_t idx, int *ms)
