@@ -202,12 +202,11 @@ fido_dev_open_rx(fido_dev_t *dev, int *ms)
 		    ms)) != FIDO_OK) {
 			fido_log_debug("%s: fido_dev_cbor_info_wait: %d",
 			    __func__, r);
+			if (r == FIDO_ERR_VENDOR_SWISSBIT_INTERFACE_DISABLED) {
+				goto fail;
+			}
 			if (disable_u2f_fallback)
 				goto fail;
-      // Check if u2f is available
-      if (check_if_u2f_available(dev, ms) != FIDO_OK) {
-        goto fail;
-      }
 			fido_log_debug("%s: falling back to u2f", __func__);
 			fido_dev_force_u2f(dev);
 		} else {
