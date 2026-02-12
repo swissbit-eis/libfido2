@@ -14,7 +14,11 @@ $ErrorActionPreference = "Stop"
 # Cygwin coordinates.
 $URL = 'https://www.cygwin.com'
 $Setup = 'setup-x86_64.exe'
-$Mirror = 'https://mirrors.kernel.org/sourceware/cygwin/'
+$Mirrors = @(
+	'https://mirrors.kernel.org/sourceware/cygwin/',
+	'https://mirrorservice.org/sites/sourceware.org/pub/cygwin/',
+	'https://cygwin.mirror.constant.com/'
+)
 $Packages = 'gcc-core,pkg-config,cmake,make,libcbor-devel,libssl-devel,zlib-devel'
 
 # Work directories.
@@ -71,11 +75,48 @@ try {
 }
 
 # Bootstrap Cygwin.
-Start-Process "${Cygwin}\${Setup}" -Wait -NoNewWindow `
-    -ArgumentList "-dnNOqW -s ${Mirror} -R ${Root} -P ${Packages}"
+$Installed = $false
+foreach ($Mirror in $Mirrors) {
+	Write-Host "Trying Cygwin mirror: ${Mirror}"
+	$SetupProcess = Start-Process "${Cygwin}\${Setup}" -Wait -NoNewWindow `
+	    -PassThru `
+	    -ArgumentList "-dnNOqW -s ${Mirror} -R ${Root} -P ${Packages}"
+	if ($SetupProcess.ExitCode -ne 0) {
+		Write-Warning "Cygwin setup exited with code $($SetupProcess.ExitCode)"
+		continue
+	}
+	& "${Root}\bin\bash.exe" -lc "command -v gcc cmake make pkg-config >/dev/null"
+	if ($LastExitCode -eq 0) {
+		$Installed = $true
+		break
+	}
+	Write-Warning "Cygwin installation incomplete from mirror ${Mirror}"
+}
+
+if (-Not $Installed) {
+	$SetupLog = "${Root}\var\log\setup.log.full"
+	if (Test-Path $SetupLog) {
+		Write-Host "Last lines from ${SetupLog}:"
+		Get-Content $SetupLog -Tail 200
+	}
+	throw "Failed to install required Cygwin packages from configured mirrors"
+}
 
 # Build libfido2.
-$Env:PATH = "${Root}\bin\;" + $Env:PATH
-cmake "-DCMAKE_BUILD_TYPE=${Config}" -B "build-${Config}"
-make -C "build-${Config}"
-make -C "build-${Config}" regress
+$Env:PATH = "${Root}\bin;" + $Env:PATH
+$Env:CC = "gcc"
+& "${Root}\bin\cmake.exe" "-G" "Unix Makefiles" `
+    "-DCMAKE_BUILD_TYPE=${Config}" `
+    "-DCMAKE_C_COMPILER=gcc" `
+    -B "build-${Config}"
+if ($LastExitCode -ne 0) {
+	throw "CMake configuration failed"
+}
+& "${Root}\bin\make.exe" -C "build-${Config}"
+if ($LastExitCode -ne 0) {
+	throw "Build failed"
+}
+& "${Root}\bin\make.exe" -C "build-${Config}" regress
+if ($LastExitCode -ne 0) {
+	throw "Regress target failed"
+}
