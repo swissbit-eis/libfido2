@@ -51,7 +51,9 @@
 .Nm fido_dev_build ,
 .Nm fido_dev_flags ,
 .Nm fido_dev_major ,
-.Nm fido_dev_minor
+.Nm fido_dev_minor ,
+.Nm u2f_version ,
+.Nm check_if_u2f_available
 .Nd FIDO2 device open/close and related functions
 .Sh SYNOPSIS
 .In fido.h
@@ -101,6 +103,10 @@
 .Fn fido_dev_major "const fido_dev_t *dev"
 .Ft uint8_t
 .Fn fido_dev_minor "const fido_dev_t *dev"
+.Ft int
+.Fn u2f_version "fido_dev_t *dev" "unsigned char *buf" "size_t buf_len" "int *reply_len" "int *ms"
+.Ft int
+.Fn check_if_u2f_available "fido_dev_t *dev" "int *ms"
 .Sh DESCRIPTION
 The
 .Fn fido_dev_open
@@ -296,6 +302,23 @@ The
 function returns the CTAPHID minor version number of
 .Fa dev .
 .Pp
+The
+.Fn u2f_version
+function transmits a U2F version command to
+.Fa dev
+and copies the raw reply to
+.Fa buf .
+The reply length is returned in
+.Fa *reply_len .
+.Pp
+The
+.Fn check_if_u2f_available
+function sends a U2F version command to
+.Fa dev
+and returns
+.Dv FIDO_OK
+if a successful U2F status word is received.
+.Pp
 For the format and meaning of the CTAPHID parameters returned by
 functions above, please refer to the FIDO Client to Authenticator
 Protocol (CTAP) specification.
@@ -303,8 +326,10 @@ Protocol (CTAP) specification.
 On success,
 .Fn fido_dev_open ,
 .Fn fido_dev_open_with_info ,
+.Fn fido_dev_close ,
+.Fn u2f_version ,
 and
-.Fn fido_dev_close
+.Fn check_if_u2f_available
 return
 .Dv FIDO_OK .
 On error, a different error code defined in

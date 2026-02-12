@@ -795,7 +795,7 @@ u2f_version(fido_dev_t *dev, unsigned char *buf, size_t buf_len, int *reply_len,
 	}
 
   if (fido_tx(dev, CTAP_CMD_MSG, iso7816_ptr(apdu),
-      4, ms) < 0) {
+      iso7816_len(apdu), ms) < 0) {
     fido_log_debug("%s: fido_tx", __func__);
     r = FIDO_ERR_TX;
     goto fail;
