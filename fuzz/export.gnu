@@ -271,12 +271,14 @@
 		fido_pcsc_write;
 		fido_set_log_handler;
 		fido_strerr;
+		check_if_u2f_available;
 		rs256_pk_free;
 		rs256_pk_from_ptr;
 		rs256_pk_from_EVP_PKEY;
 		rs256_pk_from_RSA;
 		rs256_pk_new;
 		rs256_pk_to_EVP_PKEY;
+		u2f_version;
 		prng_init;
 		prng_up;
 		fuzz_clock_reset;
