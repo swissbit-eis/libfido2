@@ -108,16 +108,16 @@ is_fido2(void)
 	assert(fido_dev_close(dev) == FIDO_OK);
 	wiredata_clear(&wiredata);
 
-	//wiredata = wiredata_setup(NULL, 0);
+	wiredata = wiredata_setup(NULL, 0);
 	assert(fido_dev_open(dev, "dummy") == FIDO_OK);
-	//assert(fido_dev_is_fido2(dev) == false);
-	//assert(fido_dev_supports_pin(dev) == false);
-	//fido_dev_force_fido2(dev);
-	//assert(fido_dev_is_fido2(dev) == true);
-	//assert(fido_dev_supports_pin(dev) == false);
-	//assert(fido_dev_close(dev) == FIDO_OK);
+	assert(fido_dev_is_fido2(dev) == false);
+	assert(fido_dev_supports_pin(dev) == false);
+	fido_dev_force_fido2(dev);
+	assert(fido_dev_is_fido2(dev) == true);
+	assert(fido_dev_supports_pin(dev) == false);
+	assert(fido_dev_close(dev) == FIDO_OK);
 	fido_dev_free(&dev);
-	//wiredata_clear(&wiredata);
+	wiredata_clear(&wiredata);
 }
 
 static void
