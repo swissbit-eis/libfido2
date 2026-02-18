@@ -306,10 +306,15 @@ The
 .Fn u2f_version
 function transmits a U2F version command to
 .Fa dev
-and copies the raw reply to
+and copies the version payload to
 .Fa buf .
 The reply length is returned in
-.Fa *reply_len .
+.Fa *reply_len
+and does not include the trailing ISO7816-4 status word.
+If the status word is not
+.Dv 0x9000 ,
+.Fn u2f_version
+fails.
 .Pp
 The
 .Fn check_if_u2f_available
@@ -317,7 +322,9 @@ function sends a U2F version command to
 .Fa dev
 and returns
 .Dv FIDO_OK
-if a successful U2F status word is received.
+if
+.Fn u2f_version
+succeeds.
 .Pp
 For the format and meaning of the CTAPHID parameters returned by
 functions above, please refer to the FIDO Client to Authenticator
