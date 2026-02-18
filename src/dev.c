@@ -202,6 +202,9 @@ fido_dev_open_rx(fido_dev_t *dev, int *ms)
 		    ms)) != FIDO_OK) {
 			fido_log_debug("%s: fido_dev_cbor_info_wait: %d",
 			    __func__, r);
+			if (r == FIDO_ERR_VENDOR_SWISSBIT_INTERFACE_DISABLED) {
+				goto fail;
+			}
 			if (disable_u2f_fallback)
 				goto fail;
 			fido_log_debug("%s: falling back to u2f", __func__);

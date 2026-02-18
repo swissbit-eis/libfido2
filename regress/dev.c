@@ -16,6 +16,7 @@
 #include <fido.h>
 
 #include "../fuzz/wiredata_fido2.h"
+#include "../fuzz/wiredata_u2f.h"
 #include "extern.h"
 
 /* gh#56 */
@@ -214,6 +215,59 @@ timeout_misc(void)
 	fido_dev_free(&dev);
 }
 
+static void
+u2f_helpers(void)
+{
+	const uint8_t	 u2f_version_ok_data[] = {
+		WIREDATA_CTAP_CBOR_INFO,
+		WIREDATA_CTAP_U2F_VERSION_OK,
+	};
+	const uint8_t	 u2f_version_fail_data[] = {
+		WIREDATA_CTAP_CBOR_INFO,
+		WIREDATA_CTAP_U2F_VERSION_FAIL,
+	};
+	uint8_t		*wiredata;
+	unsigned char	 reply[FIDO_MAXMSG];
+	fido_dev_t	*dev = NULL;
+	int		 ms = -1;
+	int		 reply_len = 0;
+
+	assert((dev = fido_dev_new()) != NULL);
+	setup_dummy_io(dev);
+
+	assert(u2f_version(dev, reply, sizeof(reply), &reply_len, &ms) !=
+	    FIDO_OK);
+	ms = -1;
+	assert(check_if_u2f_available(dev, &ms) != FIDO_OK);
+
+	wiredata = wiredata_setup(u2f_version_ok_data, sizeof(u2f_version_ok_data));
+	assert(fido_dev_open(dev, "dummy") == FIDO_OK);
+	ms = -1;
+	assert(u2f_version(dev, reply, sizeof(reply), &reply_len, &ms) ==
+	    FIDO_OK);
+	assert(reply_len == 6);
+	assert(memcmp(reply, "U2F_V2", 6) == 0);
+	assert(fido_dev_close(dev) == FIDO_OK);
+	wiredata_clear(&wiredata);
+
+	wiredata = wiredata_setup(u2f_version_ok_data, sizeof(u2f_version_ok_data));
+	assert(fido_dev_open(dev, "dummy") == FIDO_OK);
+	ms = -1;
+	assert(check_if_u2f_available(dev, &ms) == FIDO_OK);
+	assert(fido_dev_close(dev) == FIDO_OK);
+	wiredata_clear(&wiredata);
+
+	wiredata = wiredata_setup(u2f_version_fail_data,
+	    sizeof(u2f_version_fail_data));
+	assert(fido_dev_open(dev, "dummy") == FIDO_OK);
+	ms = -1;
+	assert(check_if_u2f_available(dev, &ms) == FIDO_ERR_UNSUPPORTED_OPTION);
+	assert(fido_dev_close(dev) == FIDO_OK);
+	wiredata_clear(&wiredata);
+
+	fido_dev_free(&dev);
+}
+
 int
 main(void)
 {
@@ -228,6 +282,7 @@ main(void)
 	timeout_rx();
 	timeout_ok();
 	timeout_misc();
+	u2f_helpers();
 
 	exit(0);
 }

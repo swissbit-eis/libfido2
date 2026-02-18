@@ -8,3 +8,4 @@ fuzz/report
 fuzz/*.so
 output/
 CMakeLists.txt.user*
+.cache/

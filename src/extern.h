@@ -203,6 +203,9 @@ int u2f_register(fido_dev_t *, fido_cred_t *, int *);
 int u2f_authenticate(fido_dev_t *, fido_assert_t *, int *);
 int u2f_get_touch_begin(fido_dev_t *, int *);
 int u2f_get_touch_status(fido_dev_t *, int *, int *);
+int u2f_version(fido_dev_t *, unsigned char *, size_t, int *, int *);
+int check_if_u2f_available(fido_dev_t *, int *);
+
 
 /* unexposed fido ops */
 int fido_dev_authkey(fido_dev_t *, es256_pk_t *, int *);

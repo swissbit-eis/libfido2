@@ -78,6 +78,7 @@
 #define FIDO_ERR_UNAUTHORIZED_PERM	0x40
 #define FIDO_ERR_ERR_OTHER		0x7f
 #define FIDO_ERR_SPEC_LAST		0xdf
+#define FIDO_ERR_VENDOR_SWISSBIT_INTERFACE_DISABLED	0xf0
 
 /* defined internally */
 #define FIDO_OK				FIDO_ERR_SUCCESS

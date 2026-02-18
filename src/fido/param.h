@@ -67,6 +67,7 @@
 /* U2F command opcodes. */
 #define U2F_CMD_REGISTER		0x01
 #define U2F_CMD_AUTH			0x02
+#define U2F_CMD_VERSION			0x03
 
 /* U2F command flags. */
 #define U2F_AUTH_SIGN			0x03

@@ -218,6 +218,8 @@ int fido_dev_set_io_functions(fido_dev_t *, const fido_dev_io_t *);
 int fido_dev_set_pin(fido_dev_t *, const char *, const char *);
 int fido_dev_set_transport_functions(fido_dev_t *, const fido_dev_transport_t *);
 int fido_dev_set_timeout(fido_dev_t *, int);
+int u2f_version(fido_dev_t *, unsigned char *, size_t, int *, int *);
+int check_if_u2f_available(fido_dev_t *, int *);
 /**
  * @brief Directly receive a CTAP message.
  *

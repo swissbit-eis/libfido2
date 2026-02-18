@@ -261,6 +261,8 @@ list(APPEND MAN_ALIAS
 	fido_dev_open fido_dev_new_with_info
 	fido_dev_open fido_dev_open_with_info
 	fido_dev_open fido_dev_protocol
+	fido_dev_open u2f_version
+	fido_dev_open check_if_u2f_available
 	fido_dev_open fido_dev_supports_cred_prot
 	fido_dev_open fido_dev_supports_credman
 	fido_dev_open fido_dev_supports_permissions
