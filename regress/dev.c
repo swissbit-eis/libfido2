@@ -245,7 +245,7 @@ u2f_helpers(void)
 	ms = -1;
 	assert(u2f_version(dev, reply, sizeof(reply), &reply_len, &ms) ==
 	    FIDO_OK);
-	assert(reply_len == 8);
+	assert(reply_len == 6);
 	assert(memcmp(reply, "U2F_V2", 6) == 0);
 	assert(fido_dev_close(dev) == FIDO_OK);
 	wiredata_clear(&wiredata);
