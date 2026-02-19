@@ -319,6 +319,7 @@ verify_attstmt(const fido_blob_t *dgst, const fido_attstmt_t *attstmt)
 	switch (attstmt->alg) {
 	case COSE_UNSPEC:
 	case COSE_ES256:
+	case COSE_ESP256:
 		ok = es256_verify_sig(dgst, pkey, &attstmt->sig);
 		break;
 	case COSE_ES384:
@@ -503,6 +504,7 @@ fido_cred_verify_self(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		ok = es256_pk_verify_sig(&dgst, &cred->attcred.pubkey.es256,
 		    &cred->attstmt.sig);
 		break;
@@ -1075,7 +1077,8 @@ fido_cred_set_type(fido_cred_t *cred, int cose_alg)
 {
 	if (cred->type != 0)
 		return (FIDO_ERR_INVALID_ARGUMENT);
-	if (cose_alg != COSE_ES256 && cose_alg != COSE_ES384 &&
+	if (cose_alg != COSE_ES256 && cose_alg != COSE_ESP256 &&
+	    cose_alg != COSE_ES384 &&
 	    cose_alg != COSE_RS256 && cose_alg != COSE_EDDSA)
 		return (FIDO_ERR_INVALID_ARGUMENT);
 
@@ -1205,6 +1208,7 @@ fido_cred_pubkey_ptr(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		ptr = &cred->attcred.pubkey.es256;
 		break;
 	case COSE_ES384:
@@ -1231,6 +1235,7 @@ fido_cred_pubkey_len(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		len = sizeof(cred->attcred.pubkey.es256);
 		break;
 	case COSE_ES384:

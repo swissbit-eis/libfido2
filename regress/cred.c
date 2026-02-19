@@ -2277,6 +2277,88 @@ valid_cred(void)
 	free_cred(c);
 }
 
+static int
+make_esp256_authdata(unsigned char *dst, size_t len)
+{
+	size_t i;
+
+	if (len != sizeof(authdata))
+		return (-1);
+
+	memcpy(dst, authdata, sizeof(authdata));
+
+	for (i = 1; i + 2 < len; i++) {
+		if (dst[i - 1] == 0x03 && dst[i] == 0x26 &&
+		    dst[i + 1] == 0x20 && dst[i + 2] == 0x01) {
+			dst[i] = 0x28; /* COSE_ESP256 (-9) */
+			return (0);
+		}
+	}
+
+	return (-1);
+}
+
+static void
+valid_cred_esp256(void)
+{
+	fido_cred_t *c;
+	unsigned char authdata_esp256[sizeof(authdata)];
+
+	assert(make_esp256_authdata(authdata_esp256, sizeof(authdata_esp256)) == 0);
+
+	c = alloc_cred();
+	assert(fido_cred_set_type(c, COSE_ESP256) == FIDO_OK);
+	assert(fido_cred_set_clientdata_hash(c, cdh, sizeof(cdh)) == FIDO_OK);
+	assert(fido_cred_set_rp(c, rp_id, rp_name) == FIDO_OK);
+	assert(fido_cred_set_authdata(c, authdata_esp256, sizeof(authdata_esp256))
+	    == FIDO_OK);
+	assert(fido_cred_set_rk(c, FIDO_OPT_FALSE) == FIDO_OK);
+	assert(fido_cred_set_uv(c, FIDO_OPT_FALSE) == FIDO_OK);
+	assert(fido_cred_set_x509(c, x509, sizeof(x509)) == FIDO_OK);
+	assert(fido_cred_set_sig(c, sig, sizeof(sig)) == FIDO_OK);
+	assert(fido_cred_set_fmt(c, "packed") == FIDO_OK);
+	assert(fido_cred_verify(c) == FIDO_OK);
+	assert(fido_cred_prot(c) == 0);
+	assert(fido_cred_pubkey_len(c) == sizeof(pubkey));
+	assert(memcmp(fido_cred_pubkey_ptr(c), pubkey, sizeof(pubkey)) == 0);
+	assert(fido_cred_id_len(c) == sizeof(id));
+	assert(memcmp(fido_cred_id_ptr(c), id, sizeof(id)) == 0);
+	assert(fido_cred_aaguid_len(c) == sizeof(aaguid));
+	assert(memcmp(fido_cred_aaguid_ptr(c), aaguid, sizeof(aaguid)) == 0);
+	free_cred(c);
+}
+
+static void
+invalid_esp256_type_mismatch(void)
+{
+	fido_cred_t *c;
+	unsigned char *unset;
+
+	unset = calloc(1, sizeof(aaguid));
+	assert(unset != NULL);
+
+	c = alloc_cred();
+	assert(fido_cred_set_type(c, COSE_ESP256) == FIDO_OK);
+	assert(fido_cred_set_clientdata_hash(c, cdh, sizeof(cdh)) == FIDO_OK);
+	assert(fido_cred_set_rp(c, rp_id, rp_name) == FIDO_OK);
+	assert(fido_cred_set_authdata(c, authdata, sizeof(authdata))
+	    == FIDO_ERR_INVALID_ARGUMENT);
+	assert(fido_cred_set_rk(c, FIDO_OPT_FALSE) == FIDO_OK);
+	assert(fido_cred_set_uv(c, FIDO_OPT_FALSE) == FIDO_OK);
+	assert(fido_cred_set_x509(c, x509, sizeof(x509)) == FIDO_OK);
+	assert(fido_cred_set_sig(c, sig, sizeof(sig)) == FIDO_OK);
+	assert(fido_cred_set_fmt(c, "packed") == FIDO_OK);
+	assert(fido_cred_verify(c) == FIDO_ERR_INVALID_ARGUMENT);
+	assert(fido_cred_pubkey_len(c) == 0);
+	assert(fido_cred_pubkey_ptr(c) == NULL);
+	assert(fido_cred_id_len(c) == 0);
+	assert(fido_cred_id_ptr(c) == NULL);
+	assert(fido_cred_aaguid_len(c) == sizeof(aaguid));
+	assert(memcmp(fido_cred_aaguid_ptr(c), unset, sizeof(aaguid)) == 0);
+	free_cred(c);
+	free(unset);
+}
+
 static void
 no_cdh(void)
 {
@@ -3031,6 +3113,7 @@ main(void)
 
 	empty_cred();
 	valid_cred();
+	valid_cred_esp256();
 	no_cdh();
 	no_rp_id();
 	no_rp_name();
@@ -3047,6 +3130,7 @@ main(void)
 	junk_sig();
 	wrong_options();
 	invalid_type();
+	invalid_esp256_type_mismatch();
 	bad_cbor_serialize();
 	duplicate_keys();
 	unsorted_keys();

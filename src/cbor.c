@@ -1023,6 +1023,7 @@ get_cose_alg(const cbor_item_t *item, int *cose_alg)
 
 	switch (cose_key.alg) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		if (cose_key.kty != COSE_KTY_EC2 ||
 		    cose_key.crv != COSE_P256) {
 			fido_log_debug("%s: invalid kty/crv", __func__);
@@ -1070,6 +1071,7 @@ cbor_decode_pubkey(const cbor_item_t *item, int *type, void *key)
 
 	switch (*type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		if (es256_pk_decode(item, key) < 0) {
 			fido_log_debug("%s: es256_pk_decode", __func__);
 			return (-1);
@@ -1536,7 +1538,9 @@ decode_attstmt_entry(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 			goto out;
 		}
 		attstmt->alg = -(int)cbor_get_int(val) - 1;
-		if (attstmt->alg != COSE_ES256 && attstmt->alg != COSE_ES384 &&
+		if (attstmt->alg != COSE_ES256 &&
+		    attstmt->alg != COSE_ESP256 &&
+		    attstmt->alg != COSE_ES384 &&
 		    attstmt->alg != COSE_RS256 && attstmt->alg != COSE_EDDSA &&
 		    attstmt->alg != COSE_RS1) {
 			fido_log_debug("%s: unsupported attstmt->alg=%d",
