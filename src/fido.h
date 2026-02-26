@@ -78,6 +78,14 @@ void cbor_vector_free(cbor_item_t **, size_t);
  */
 void fido_blob_free(fido_blob_t **bp);
 /**
+ * @brief Returns a pointer to the blob contents.
+ */
+const unsigned char *fido_blob_ptr(const fido_blob_t *);
+/**
+ * @brief Returns the blob length in bytes.
+ */
+size_t fido_blob_len(const fido_blob_t *);
+/**
  * @brief Releases the memory that was allocated for @a pk. 
  */
 void es256_pk_free(es256_pk_t **pk);
@@ -226,12 +234,19 @@ int check_if_u2f_available(fido_dev_t *, int *);
  * @note Can not be used with WinHello.
  * 
  * @param dev   Device handle
- * @param cmd   CTAP command identifier
+ * @param cmd   In/out CTAP command identifier.
+ *              If a custom transport is configured with
+ *              fido_dev_set_transport_functions(), *cmd is passed to the
+ *              custom rx function. Custom implementations typically use this
+ *              value as a selector, i.e. to choose which receive path or
+ *              parsing logic to execute.
+ *              For CTAPHID, *cmd is overwritten with the actually received
+ *              command (e.g. CTAP_KEEPALIVE, CTAP_CMD_CBOR).
  * @param buf   Buffer for the response
  * @param count Maximal count of response bytes
  * @param ms    Overwrites the device timeout if >= 0
  */
-int fido_direct_rx(fido_dev_t *dev, uint8_t cmd, void *buf, size_t count, int ms);
+int fido_direct_rx(fido_dev_t *dev, uint8_t *cmd, void *buf, size_t count, int ms);
 /**
  * @brief Directly transmits a CTAP message.
  *
@@ -393,6 +408,17 @@ int cbor_add_uv_params_assert(fido_dev_t *dev, const fido_assert_t *assert, cons
  * @param assert getAssertion struct
  */
 int fido_parse_get_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert);
+
+/**
+ * @brief Parses the content of a makeCredential response into a makeCredential struct.
+ *
+ * @details The makeCredential struct is reset prior to the parsing.
+ *
+ * @param msg    makeCredential response message
+ * @param msglen Length of the message
+ * @param cred   makeCredential struct
+ */
+int fido_parse_make_cred_msg(uint8_t *msg, int msglen, fido_cred_t *cred);
 
 /**
  * @brief Parses the content of a getNextAssertion response and adds it to an getAssertion struct.

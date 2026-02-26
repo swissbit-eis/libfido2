@@ -49,6 +49,32 @@ parse_makecred_reply(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 	}
 }
 
+int
+fido_parse_make_cred_msg(uint8_t *msg, int msglen, fido_cred_t *cred)
+{
+	int r;
+
+	fido_cred_reset_rx(cred);
+
+	if ((r = cbor_parse_reply(msg, (size_t)msglen, cred,
+	    parse_makecred_reply)) != FIDO_OK) {
+		fido_log_debug("%s: parse_makecred_reply", __func__);
+		goto fail;
+	}
+
+	if (cred->fmt == NULL || fido_blob_is_empty(&cred->authdata_cbor) ||
+	    fido_blob_is_empty(&cred->attcred.id)) {
+		r = FIDO_ERR_INVALID_CBOR;
+		goto fail;
+	}
+
+	return (FIDO_OK);
+fail:
+	fido_cred_reset_rx(cred);
+
+	return (r);
+}
+
 static int
 fido_dev_make_cred_tx(fido_dev_t *dev, fido_cred_t *cred, const char *pin,
     int *ms)
