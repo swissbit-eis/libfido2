@@ -360,6 +360,7 @@ pack_cose(WEBAUTHN_COSE_CREDENTIAL_PARAMETER *alg,
 {
 	switch (type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		alg->lAlg = WEBAUTHN_COSE_ALGORITHM_ECDSA_P256_WITH_SHA256;
 		break;
 	case COSE_ES384:

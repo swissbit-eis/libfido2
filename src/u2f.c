@@ -678,7 +678,8 @@ u2f_register(fido_dev_t *dev, fido_cred_t *cred, int *ms)
 		return (FIDO_ERR_UNSUPPORTED_OPTION);
 	}
 
-	if (cred->type != COSE_ES256 || cred->cdh.ptr == NULL ||
+	if ((cred->type != COSE_ES256 && cred->type != COSE_ESP256) ||
+	    cred->cdh.ptr == NULL ||
 	    cred->rp.id == NULL || cred->cdh.len != SHA256_DIGEST_LENGTH) {
 		fido_log_debug("%s: type=%d, cdh=(%p,%zu)" , __func__,
 		    cred->type, (void *)cred->cdh.ptr, cred->cdh.len);

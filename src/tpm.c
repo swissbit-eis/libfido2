@@ -357,6 +357,7 @@ fido_get_signed_hash_tpm(fido_blob_t *dgst, const fido_blob_t *clientdata_hash,
 
 	switch (attcred->type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		if (check_es256_pubarea(pubarea, &attcred->pubkey.es256) < 0) {
 			fido_log_debug("%s: check_es256_pubarea", __func__);
 			return -1;

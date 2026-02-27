@@ -111,6 +111,7 @@
 #define COSE_UNSPEC	0
 #define COSE_ES256	-7
 #define COSE_EDDSA	-8
+#define COSE_ESP256	-9
 #define COSE_ECDH_ES256	-25
 #define COSE_ES384	-35
 #define COSE_RS256	-257

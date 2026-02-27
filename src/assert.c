@@ -520,6 +520,7 @@ fido_get_signed_hash(int cose_alg, fido_blob_t *dgst,
 
 	switch (cose_alg) {
 	case COSE_ES256:
+	case COSE_ESP256:
 	case COSE_RS256:
 		ok = get_es256_hash(dgst, clientdata, &authdata);
 		break;
@@ -598,6 +599,7 @@ fido_assert_verify(const fido_assert_t *assert, size_t idx, int cose_alg,
 
 	switch (cose_alg) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		ok = es256_pk_verify_sig(&dgst, pk, &stmt->sig);
 		break;
 	case COSE_ES384:

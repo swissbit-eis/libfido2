@@ -85,6 +85,8 @@ _fido_bio_template_name
 _fido_bio_template_new
 _fido_bio_template_set_id
 _fido_bio_template_set_name
+_fido_blob_len
+_fido_blob_ptr
 _fido_cbor_info_aaguid_len
 _fido_cbor_info_aaguid_ptr
 _fido_cbor_info_algorithm_cose
@@ -259,6 +261,9 @@ _fido_dev_largeblob_remove
 _fido_dev_largeblob_set
 _fido_dev_largeblob_set_array
 _fido_init
+_fido_parse_and_add_get_next_assert_msg
+_fido_parse_get_assert_msg
+_fido_parse_make_cred_msg
 _fido_set_log_handler
 _fido_strerr
 _check_if_u2f_available

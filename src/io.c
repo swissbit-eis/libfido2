@@ -354,26 +354,111 @@ transport_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count, int *ms)
 }
 
 int
-fido_direct_rx(fido_dev_t *d, uint8_t cmd, void *buf, size_t count, int ms)
+fido_direct_rx(fido_dev_t *d, uint8_t *cmd, void *buf, size_t count, int ms)
 {
-  if (ms <= 0) {
-    ms = d->timeout_ms;
-  }
-  int n;
+	struct frame	f;
+	size_t		r, payload_len, init_data_len, cont_data_len;
+	int		n;
 
-  fido_log_debug("%s: dev=%p, cmd=0x%02x, ms=%d", __func__, (void *)d,
-      cmd, ms);
+	if (ms <= 0)
+		ms = d->timeout_ms;
 
-  if (d->transport.rx != NULL)
-    return (transport_rx(d, cmd, buf, count, &ms));
-  if (d->io_handle == NULL || d->io.read == NULL || count > UINT16_MAX) {
-    fido_log_debug("%s: invalid argument", __func__);
-    return (-1);
-  }
-  if ((n = rx(d, cmd, buf, count, &ms, true)) >= 0)
-    fido_log_xxd(buf, (size_t)n, "%s", __func__);
+	if (cmd == NULL) {
+		fido_log_debug("%s: invalid argument", __func__);
+		return (-1);
+	}
 
-  return (n);
+	fido_log_debug("%s: dev=%p, cmd=0x%02x, ms=%d", __func__, (void *)d, *cmd, ms);
+
+	/* When a custom transport is configured, we pass *cmd through unchanged.
+	 * Custom rx implementations usually use it as a selector (to choose which
+	 * receive/parsing path to run). */
+	if (d->transport.rx != NULL)
+		return (transport_rx(d, *cmd, buf, count, &ms));
+
+	if (d->io_handle == NULL || d->io.read == NULL || count > UINT16_MAX) {
+		fido_log_debug("%s: invalid argument", __func__);
+		return (-1);
+	}
+
+	if (d->rx_len <= CTAP_INIT_HEADER_LEN ||
+	    d->rx_len <= CTAP_CONT_HEADER_LEN)
+		return (-1);
+
+	init_data_len = d->rx_len - CTAP_INIT_HEADER_LEN;
+	cont_data_len = d->rx_len - CTAP_CONT_HEADER_LEN;
+
+	if (init_data_len > sizeof(f.body.init.data) ||
+	    cont_data_len > sizeof(f.body.cont.data))
+		return (-1);
+
+	do {
+		if (rx_frame(d, &f, &ms) < 0)
+			return (-1);
+		/* Unlike fido_rx, fido_direct_rx no longer filters by command here.
+		 * We only wait for the current channel id so callers can observe
+		 * KEEPALIVE and final CBOR replies through one API. */
+	} while (f.cid != d->cid);
+
+	if (d->rx_len > sizeof(f))
+		return (-1);
+	if ((f.body.init.cmd & CTAP_FRAME_INIT) == 0) {
+		fido_log_debug("%s: first frame is not an init frame", __func__);
+		return (-1);
+	}
+
+	fido_log_xxd(&f, d->rx_len, "%s", __func__);
+	/* fido_direct_rx intentionally accepts any CTAPHID reply command and
+	 * returns its payload. */
+	*cmd = (uint8_t)(f.body.init.cmd & (uint8_t)~CTAP_FRAME_INIT);
+
+	payload_len = (size_t)((f.body.init.bcnth << 8) | f.body.init.bcntl);
+	fido_log_debug("%s: payload_len=%zu", __func__, payload_len);
+
+	if (count < payload_len) {
+		fido_log_debug("%s: count < payload_len", __func__);
+		return (-1);
+	}
+
+	if (payload_len < init_data_len) {
+		memcpy(buf, f.body.init.data, payload_len);
+		n = (int)payload_len;
+		goto out;
+	}
+
+	memcpy(buf, f.body.init.data, init_data_len);
+	r = init_data_len;
+
+	for (int seq = 0; r < payload_len; seq++) {
+		if (rx_frame(d, &f, &ms) < 0) {
+			fido_log_debug("%s: rx_frame", __func__);
+			return (-1);
+		}
+
+		fido_log_xxd(&f, d->rx_len, "%s", __func__);
+
+		if (f.cid != d->cid || f.body.cont.seq != seq) {
+			fido_log_debug("%s: cid (0x%x, 0x%x), seq (%d, %d)",
+			    __func__, f.cid, d->cid, f.body.cont.seq, seq);
+			return (-1);
+		}
+
+		if (payload_len - r > cont_data_len) {
+			memcpy((unsigned char *)buf + r, f.body.cont.data,
+			    cont_data_len);
+			r += cont_data_len;
+		} else {
+			memcpy((unsigned char *)buf + r, f.body.cont.data,
+			    payload_len - r);
+			r += payload_len - r;
+		}
+	}
+
+	n = (int)r;
+out:
+	fido_log_xxd(buf, (size_t)n, "%s", __func__);
+
+	return (n);
 }
 
 int

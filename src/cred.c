@@ -49,6 +49,32 @@ parse_makecred_reply(const cbor_item_t *key, const cbor_item_t *val, void *arg)
 	}
 }
 
+int
+fido_parse_make_cred_msg(uint8_t *msg, int msglen, fido_cred_t *cred)
+{
+	int r;
+
+	fido_cred_reset_rx(cred);
+
+	if ((r = cbor_parse_reply(msg, (size_t)msglen, cred,
+	    parse_makecred_reply)) != FIDO_OK) {
+		fido_log_debug("%s: parse_makecred_reply", __func__);
+		goto fail;
+	}
+
+	if (cred->fmt == NULL || fido_blob_is_empty(&cred->authdata_cbor) ||
+	    fido_blob_is_empty(&cred->attcred.id)) {
+		r = FIDO_ERR_INVALID_CBOR;
+		goto fail;
+	}
+
+	return (FIDO_OK);
+fail:
+	fido_cred_reset_rx(cred);
+
+	return (r);
+}
+
 static int
 fido_dev_make_cred_tx(fido_dev_t *dev, fido_cred_t *cred, const char *pin,
     int *ms)
@@ -319,6 +345,7 @@ verify_attstmt(const fido_blob_t *dgst, const fido_attstmt_t *attstmt)
 	switch (attstmt->alg) {
 	case COSE_UNSPEC:
 	case COSE_ES256:
+	case COSE_ESP256:
 		ok = es256_verify_sig(dgst, pkey, &attstmt->sig);
 		break;
 	case COSE_ES384:
@@ -503,6 +530,7 @@ fido_cred_verify_self(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		ok = es256_pk_verify_sig(&dgst, &cred->attcred.pubkey.es256,
 		    &cred->attstmt.sig);
 		break;
@@ -1075,7 +1103,8 @@ fido_cred_set_type(fido_cred_t *cred, int cose_alg)
 {
 	if (cred->type != 0)
 		return (FIDO_ERR_INVALID_ARGUMENT);
-	if (cose_alg != COSE_ES256 && cose_alg != COSE_ES384 &&
+	if (cose_alg != COSE_ES256 && cose_alg != COSE_ESP256 &&
+	    cose_alg != COSE_ES384 &&
 	    cose_alg != COSE_RS256 && cose_alg != COSE_EDDSA)
 		return (FIDO_ERR_INVALID_ARGUMENT);
 
@@ -1205,6 +1234,7 @@ fido_cred_pubkey_ptr(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		ptr = &cred->attcred.pubkey.es256;
 		break;
 	case COSE_ES384:
@@ -1231,6 +1261,7 @@ fido_cred_pubkey_len(const fido_cred_t *cred)
 
 	switch (cred->attcred.type) {
 	case COSE_ES256:
+	case COSE_ESP256:
 		len = sizeof(cred->attcred.pubkey.es256);
 		break;
 	case COSE_ES384:
