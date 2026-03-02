@@ -333,10 +333,10 @@ int fido_dev_largeblob_get_array(fido_dev_t *, unsigned char **, size_t *);
 int fido_dev_largeblob_set_array(fido_dev_t *, const unsigned char *, size_t,
     const char *);
 
-/**
- * TODO
- */
+cbor_item_t *fido_blob_encode(const fido_blob_t *);
+int fido_blob_set(fido_blob_t *, const unsigned char *, size_t);
 int fido_blob_decode(const cbor_item_t *, fido_blob_t *);
+int fido_blob_serialise(fido_blob_t *b, const cbor_item_t *item);
 
 /**
  * TODO
@@ -388,6 +388,11 @@ cbor_item_t * es256_pk_encode(const es256_pk_t *pk, int ecdh);
  * TODO
  */
 int fido_parse_make_credential_msg(uint8_t *msg, int msglen, fido_cred_t *cred);
+
+int
+cbor_add_uv_params(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *hmac_data,
+    const es256_pk_t *pk, const fido_blob_t *ecdh, const char *pin,
+    const char *rpid, cbor_item_t **auth, cbor_item_t **opt, int *ms);
 
 /**
  * @brief Request a pin-uv token and decode it into cbor items for a getAssertion command.
