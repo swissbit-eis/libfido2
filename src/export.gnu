@@ -212,10 +212,12 @@
 		fido_dev_flags;
 		fido_dev_force_fido2;
 		fido_dev_force_pin_change;
+		fido_dev_force_pin_uv_protocol;
 		fido_dev_force_u2f;
 		fido_dev_free;
 		fido_dev_get_assert;
 		fido_dev_get_cbor_info;
+		fido_dev_get_pin_protocol;
 		fido_dev_get_retry_count;
 		fido_dev_get_uv_retry_count;
 		fido_dev_get_touch_begin;

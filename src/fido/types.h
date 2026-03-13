@@ -324,6 +324,7 @@ typedef struct fido_dev {
 	size_t                rx_len;     /* length of HID input reports */
 	size_t                tx_len;     /* length of HID output reports */
 	int                   flags;      /* internal flags; see FIDO_DEV_* */
+	uint8_t               pin_uv_protocol; /* forced pinUvAuthProtocol */
 	fido_dev_transport_t  transport;  /* transport functions */
 	uint64_t	      maxmsgsize; /* max message size */
 	int		      timeout_ms; /* read timeout in ms */

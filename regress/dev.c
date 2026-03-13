@@ -216,6 +216,31 @@ timeout_misc(void)
 }
 
 static void
+pin_protocol(void)
+{
+	fido_dev_t *dev;
+
+	assert((dev = fido_dev_new()) != NULL);
+	assert(fido_dev_get_pin_protocol(dev) == 0);
+	assert(fido_dev_force_pin_uv_protocol(dev,
+	    CTAP_PIN_PROTOCOL1) == FIDO_OK);
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL1);
+	dev->flags = FIDO_DEV_PIN_PROTOCOL1 | FIDO_DEV_PIN_PROTOCOL2;
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL1);
+	assert(fido_dev_force_pin_uv_protocol(dev,
+	    CTAP_PIN_PROTOCOL2) == FIDO_OK);
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL2);
+	assert(fido_dev_force_pin_uv_protocol(dev, 3) ==
+	    FIDO_ERR_INVALID_ARGUMENT);
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL2);
+	assert(fido_dev_force_pin_uv_protocol(dev, 0) == FIDO_OK);
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL2);
+	dev->flags = FIDO_DEV_PIN_PROTOCOL1;
+	assert(fido_dev_get_pin_protocol(dev) == CTAP_PIN_PROTOCOL1);
+	fido_dev_free(&dev);
+}
+
+static void
 u2f_helpers(void)
 {
 	const uint8_t	 u2f_version_ok_data[] = {
@@ -282,6 +307,7 @@ main(void)
 	timeout_rx();
 	timeout_ok();
 	timeout_misc();
+	pin_protocol();
 	u2f_helpers();
 
 	exit(0);

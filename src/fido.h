@@ -69,6 +69,7 @@ void fido_assert_free(fido_assert_t **);
 void fido_cbor_info_free(fido_cbor_info_t **);
 void fido_cred_free(fido_cred_t **);
 void fido_dev_force_fido2(fido_dev_t *);
+int fido_dev_force_pin_uv_protocol(fido_dev_t *, uint8_t);
 void fido_dev_force_u2f(fido_dev_t *);
 void fido_dev_free(fido_dev_t **);
 void fido_dev_info_free(fido_dev_info_t **, size_t);
@@ -212,7 +213,7 @@ int fido_dev_get_touch_status(fido_dev_t *, int *, int);
  */
 int fido_dev_get_timeout(fido_dev_t *dev);
 /**
- * @brief Get the pin protocol of the device.
+ * @brief Get the effective pin protocol of the device.
  */
 uint8_t fido_dev_get_pin_protocol(const fido_dev_t *dev);
 int fido_dev_info_manifest(fido_dev_info_t *, size_t, size_t *);

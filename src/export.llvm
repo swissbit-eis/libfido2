@@ -210,10 +210,12 @@ _fido_dev_enable_entattest
 _fido_dev_flags
 _fido_dev_force_fido2
 _fido_dev_force_pin_change
+_fido_dev_force_pin_uv_protocol
 _fido_dev_force_u2f
 _fido_dev_free
 _fido_dev_get_assert
 _fido_dev_get_cbor_info
+_fido_dev_get_pin_protocol
 _fido_dev_get_retry_count
 _fido_dev_get_uv_retry_count
 _fido_dev_get_touch_begin

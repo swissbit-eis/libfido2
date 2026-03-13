@@ -37,6 +37,7 @@
 .Nm fido_dev_new_with_info ,
 .Nm fido_dev_free ,
 .Nm fido_dev_force_fido2 ,
+.Nm fido_dev_force_pin_uv_protocol ,
 .Nm fido_dev_force_u2f ,
 .Nm fido_dev_is_fido2 ,
 .Nm fido_dev_is_winhello ,
@@ -73,6 +74,8 @@
 .Fn fido_dev_free "fido_dev_t **dev_p"
 .Ft void
 .Fn fido_dev_force_fido2 "fido_dev_t *dev"
+.Ft int
+.Fn fido_dev_force_pin_uv_protocol "fido_dev_t *dev" "uint8_t prot"
 .Ft void
 .Fn fido_dev_force_u2f "fido_dev_t *dev"
 .Ft bool
@@ -205,6 +208,19 @@ where
 is an open device.
 .Pp
 The
+.Fn fido_dev_force_pin_uv_protocol
+function can be used to force the PIN/UV authentication protocol used
+by subsequent CTAP2 PIN and UV operations on
+.Fa dev .
+The
+.Fa prot
+parameter must be set to
+.Dv CTAP_PIN_PROTOCOL1 ,
+.Dv CTAP_PIN_PROTOCOL2 ,
+or 0 to clear a previously forced override and resume automatic
+selection.
+.Pp
+The
 .Fn fido_dev_is_fido2
 function returns
 .Dv true
@@ -334,6 +350,7 @@ On success,
 .Fn fido_dev_open ,
 .Fn fido_dev_open_with_info ,
 .Fn fido_dev_close ,
+.Fn fido_dev_force_pin_uv_protocol ,
 .Fn u2f_version ,
 and
 .Fn check_if_u2f_available

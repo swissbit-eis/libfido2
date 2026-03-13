@@ -13,6 +13,19 @@
 
 static TLS bool disable_u2f_fallback;
 
+static bool
+pin_uv_protocol_is_valid(uint8_t prot)
+{
+	switch (prot) {
+	case 0:
+	case CTAP_PIN_PROTOCOL1:
+	case CTAP_PIN_PROTOCOL2:
+		return (true);
+	}
+
+	return (false);
+}
+
 #ifdef FIDO_FUZZ
 static void
 set_random_report_len(fido_dev_t *dev)
@@ -583,9 +596,25 @@ fido_dev_force_fido2(fido_dev_t *dev)
 	dev->attr.flags |= FIDO_CAP_CBOR;
 }
 
+int
+fido_dev_force_pin_uv_protocol(fido_dev_t *dev, uint8_t prot)
+{
+	if (pin_uv_protocol_is_valid(prot) == false) {
+		fido_log_debug("%s: unsupported protocol %u", __func__, prot);
+		return (FIDO_ERR_INVALID_ARGUMENT);
+	}
+
+	dev->pin_uv_protocol = prot;
+
+	return (FIDO_OK);
+}
+
 uint8_t
 fido_dev_get_pin_protocol(const fido_dev_t *dev)
 {
+	if (dev->pin_uv_protocol != 0)
+		return (dev->pin_uv_protocol);
+
 	if (dev->flags & FIDO_DEV_PIN_PROTOCOL2)
 		return (CTAP_PIN_PROTOCOL2);
 	else if (dev->flags & FIDO_DEV_PIN_PROTOCOL1)
