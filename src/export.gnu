@@ -215,6 +215,7 @@
 		fido_dev_force_pin_uv_protocol;
 		fido_dev_force_u2f;
 		fido_dev_free;
+		fido_dev_get_active_interfaces;
 		fido_dev_get_assert;
 		fido_dev_get_cbor_info;
 		fido_dev_get_pin_protocol;
@@ -246,6 +247,7 @@
 		fido_dev_open_with_info;
 		fido_dev_protocol;
 		fido_dev_reset;
+		fido_dev_set_active_interfaces;
 		fido_dev_set_io_functions;
 		fido_dev_set_pin;
 		fido_dev_set_pin_minlen;
