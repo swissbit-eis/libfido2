@@ -199,7 +199,7 @@ fido_build_cred_cbor(fido_cred_t *cred, cbor_item_t **argv, size_t argc,
 	/* user verification */
 	if (!fido_blob_is_empty(token)) {
 		argv[7] = cbor_encode_pin_auth_2(pin_prot, token, &(cred->cdh));
-		argv[8] = cbor_encode_pin_opt_2(pin_prot);
+		argv[8] = cbor_build_uint8(pin_prot);
 	}
 
 	/* options */
