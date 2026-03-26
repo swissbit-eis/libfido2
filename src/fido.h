@@ -62,6 +62,7 @@ fido_dev_t *fido_dev_new(void);
 fido_dev_t *fido_dev_new_with_info(const fido_dev_info_t *);
 fido_dev_info_t *fido_dev_info_new(size_t);
 fido_cbor_info_t *fido_cbor_info_new(void);
+fido_blob_t *fido_blob_new(void);
 void *fido_dev_io_handle(const fido_dev_t *);
 void fido_dev_set_io_handle(fido_dev_t*, void*);
 
@@ -350,6 +351,20 @@ int fido_dev_largeblob_get_array(fido_dev_t *, unsigned char **, size_t *);
 int fido_dev_largeblob_set_array(fido_dev_t *, const unsigned char *, size_t,
     const char *);
 
+int fido_blob_set(fido_blob_t *, const unsigned char *, size_t);
+int fido_blob_decode(const cbor_item_t *, fido_blob_t *);
+
+/**
+ * @brief Converts the properties of @a cred into a list of cbor items @a argv.
+ *
+ * @param cred     makeCredential struct
+ * @param argv     List of cbor items
+ * @param argc     Number of available cbor items in @a argv, needs to be at least 10
+ * @param token    User verification token
+ * @param pin_prot Pin protocol
+ */
+int fido_build_cred_cbor(fido_cred_t *cred, cbor_item_t **argv, size_t argc, const fido_blob_t *token, uint8_t pin_prot);
+
 /**
  * @brief Converts the properties of @a assert into a list of cbor items @a argv.
  *
@@ -362,6 +377,7 @@ int fido_dev_largeblob_set_array(fido_dev_t *, const unsigned char *, size_t,
  */
 int fido_build_assert_cbor(const fido_assert_t *assert, cbor_item_t **argv, size_t argc,
     const fido_blob_t *ecdh, const es256_pk_t *pk, uint8_t pin_prot);
+
 /**
  * @brief Converst a list of cbor items to a cbor byte array.
  *
@@ -382,6 +398,15 @@ int cbor_build_frame_ext(uint8_t cmd, cbor_item_t *argv[], size_t argc, fido_blo
  * @param ecdh Shared secret
  */
 int fido_do_ecdh_ext(fido_dev_t *dev, es256_pk_t **pk, fido_blob_t **ecdh);
+
+cbor_item_t * es256_pk_encode(const es256_pk_t *pk, int ecdh);
+
+int cbor_parse_reply(const unsigned char *, size_t, void *, int(*)(const cbor_item_t *, const cbor_item_t *, void *));
+
+int
+cbor_add_uv_params(fido_dev_t *dev, uint8_t cmd, const fido_blob_t *hmac_data,
+    const es256_pk_t *pk, const fido_blob_t *ecdh, const char *pin,
+    const char *rpid, cbor_item_t **auth, cbor_item_t **opt, int *ms);
 
 /**
  * @brief Request a pin-uv token and decode it into cbor items for a getAssertion command.
@@ -429,6 +454,16 @@ int fido_parse_make_cred_msg(uint8_t *msg, int msglen, fido_cred_t *cred);
  * @param assert getAssertion struct
  */
 int fido_parse_and_add_get_next_assert_msg(uint8_t *msg, int msglen, fido_assert_t *assert);
+
+/**
+ * @brief Decrypts the user verification token.
+ *
+ * @param pin_prot  Pin protocol
+ * @param aes_token Encrypted user verificatino token
+ * @param token     User verification token
+ * @param key       Shared secret to decrypt the user verification token
+ */
+int decrypt_uv_token(uint8_t pin_prot, fido_blob_t *aes_token, fido_blob_t *token, const fido_blob_t *key);
 
 /**
  * @brief Decrypts the hmac secrets of a getAssertion response.

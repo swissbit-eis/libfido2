@@ -355,6 +355,16 @@ fido_dev_get_uv_token(fido_dev_t *dev, uint8_t cmd, const char *pin,
 	return (uv_token_wait(dev, cmd, pin, ecdh, pk, rpid, token, ms));
 }
 
+int
+decrypt_uv_token(uint8_t pin_prot, fido_blob_t *aes_token, fido_blob_t *token, const fido_blob_t *key)
+{
+	if (aes256_cbc_dec_2(pin_prot, key, aes_token, token) < 0) {
+		fido_log_debug("%s: aes256_cbc_dec", __func__);
+		return (-1);
+	}
+	return (0);
+}
+
 static int
 fido_dev_change_pin_tx(fido_dev_t *dev, const char *pin, const char *oldpin,
     int *ms)
