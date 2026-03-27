@@ -438,6 +438,8 @@ credman_get_rk_wait(fido_dev_t *dev, const unsigned char *rp_id_hash_ptr,
 	int		r;
 
 	if ((rp_id_hash_ptr == NULL) || (rp_id_hash_len == 0)) {
+		if (rp_id == NULL)
+			return (FIDO_ERR_INVALID_ARGUMENT);
 		if (SHA256((const unsigned char *)rp_id, strlen(rp_id), dgst) != dgst) {
 			fido_log_debug("%s: sha256", __func__);
 			return (FIDO_ERR_INTERNAL);
@@ -475,7 +477,8 @@ fido_credman_get_dev_rk(fido_dev_t *dev, const unsigned char *rp_id_hash_ptr,
 	int ms = dev->timeout_ms;
 
 	return (credman_get_rk_wait(dev, rp_id_hash_ptr, rp_id_hash_len,
-                                rp_id, rk, pin, &ms));
+	    (rp_id_hash_ptr == NULL || rp_id_hash_len == 0) ? rp_id : NULL,
+	    rk, pin, &ms));
 }
 
 static int
