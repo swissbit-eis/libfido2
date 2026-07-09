@@ -413,6 +413,19 @@ fido_dev_set_transport_functions(fido_dev_t *dev, const fido_dev_transport_t *t)
 	return (FIDO_OK);
 }
 
+int
+fido_dev_get_transport_functions(const fido_dev_t *dev, fido_dev_transport_t *t)
+{
+	if (dev == NULL || t == NULL) {
+		fido_log_debug("%s: NULL argument", __func__);
+		return (FIDO_ERR_INVALID_ARGUMENT);
+	}
+
+	*t = dev->transport;
+
+	return (FIDO_OK);
+}
+
 void *
 fido_dev_io_handle(const fido_dev_t *dev)
 {
